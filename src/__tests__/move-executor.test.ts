@@ -771,4 +771,104 @@ describe('createMoveExecutor', () => {
       expect(boardState.kingInCheckSquare.get()).toBe('e8');
     });
   });
+
+  describe('undo / redo', () => {
+    const setup = (moves: [Square, Square][] = []) => {
+      const chess = new Chess();
+      const boardState = createMockBoardState(chess, PIECE_SIZE);
+      const onMove = jest.fn();
+      const executor = createMoveExecutor(chess, boardState, config, {
+        onMove,
+      });
+      for (const [from, to] of moves) {
+        executor.executeMove(from, to);
+      }
+      onMove.mockClear();
+      return { chess, executor, onMove };
+    };
+
+    const E2E4: [Square, Square] = ['e2' as Square, 'e4' as Square];
+    const E7E5: [Square, Square] = ['e7' as Square, 'e5' as Square];
+
+    it('reports what it can do', () => {
+      const { executor } = setup();
+      expect(executor.canUndo()).toBe(false);
+      expect(executor.canRedo()).toBe(false);
+
+      executor.executeMove(...E2E4);
+      expect(executor.canUndo()).toBe(true);
+      expect(executor.canRedo()).toBe(false);
+
+      executor.undo();
+      expect(executor.canUndo()).toBe(false);
+      expect(executor.canRedo()).toBe(true);
+    });
+
+    it('replays an undone move', () => {
+      const { chess, executor } = setup([E2E4, E7E5]);
+      const fenBefore = chess.fen();
+
+      executor.undo();
+      expect(chess.fen()).not.toBe(fenBefore);
+
+      const redone = executor.redo();
+      expect(redone?.san).toBe('e5');
+      expect(chess.fen()).toBe(fenBefore);
+    });
+
+    it('walks the whole game back and forward again', () => {
+      const { chess, executor } = setup([E2E4, E7E5]);
+      const fenBefore = chess.fen();
+
+      executor.undo();
+      executor.undo();
+      expect(executor.canUndo()).toBe(false);
+
+      executor.redo();
+      executor.redo();
+      expect(chess.fen()).toBe(fenBefore);
+      expect(executor.canRedo()).toBe(false);
+    });
+
+    it('does not report a redone move as a played move', () => {
+      // Redo is navigation: firing onMove would tell a consumer the player just
+      // moved, and a driver would try to answer it.
+      const { executor, onMove } = setup([E2E4]);
+
+      executor.undo();
+      executor.redo();
+
+      expect(onMove).not.toHaveBeenCalled();
+    });
+
+    it('discards the undone line once the game diverges', () => {
+      const { executor } = setup([E2E4]);
+
+      executor.undo();
+      expect(executor.canRedo()).toBe(true);
+
+      // A different first move — the undone one belongs to a line that no
+      // longer exists.
+      executor.executeMove('d2' as Square, 'd4' as Square);
+
+      expect(executor.canRedo()).toBe(false);
+      expect(executor.redo()).toBeNull();
+    });
+
+    it('discards the undone line when the position is replaced', () => {
+      const { executor } = setup([E2E4]);
+      executor.undo();
+
+      executor.clearRedo();
+
+      expect(executor.canRedo()).toBe(false);
+    });
+
+    it('does nothing on an empty history', () => {
+      const { executor } = setup();
+
+      expect(executor.undo()).toBeNull();
+      expect(executor.redo()).toBeNull();
+    });
+  });
 });

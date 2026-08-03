@@ -17,6 +17,14 @@ export interface ChessboardRef {
     promotion?: PieceSymbol;
   }) => Promise<Move | undefined>;
   undo: () => Move | null;
+  /**
+   * Replays the most recently undone move. Navigation, not play — it does not
+   * fire `onMove`, and playing any new move discards what was undone.
+   */
+  redo: () => Move | null;
+  /** Whether `undo` / `redo` would do anything right now. */
+  canUndo: () => boolean;
+  canRedo: () => boolean;
   highlight: (params: { square: Square; color?: string }) => void;
   resetAllHighlightedSquares: () => void;
   /**
@@ -66,6 +74,20 @@ export const useChessboardRef = ({
     return moveExecutor.undo();
   }, [moveExecutor]);
 
+  const redo = useCallback((): Move | null => {
+    return moveExecutor.redo();
+  }, [moveExecutor]);
+
+  const canUndo = useCallback(
+    (): boolean => moveExecutor.canUndo(),
+    [moveExecutor]
+  );
+
+  const canRedo = useCallback(
+    (): boolean => moveExecutor.canRedo(),
+    [moveExecutor]
+  );
+
   const highlight = useCallback(
     (params: { square: Square; color?: string }) => {
       const highlightState = boardState.highlights[params.square];
@@ -99,6 +121,10 @@ export const useChessboardRef = ({
         lastMove?: { from: Square; to: Square } | null;
       }
     ) => {
+      // An externally supplied position replaces the game; whatever was undone
+      // belongs to the old one. `undo`/`redo` reach the executor's own
+      // `resetBoard` directly, so their stack survives.
+      moveExecutor.clearRedo();
       return moveExecutor.resetBoard(fen, opts);
     },
     [moveExecutor]
@@ -112,12 +138,25 @@ export const useChessboardRef = ({
     (): ChessboardRef => ({
       move,
       undo,
+      redo,
+      canUndo,
+      canRedo,
       highlight,
       resetAllHighlightedSquares,
       resetBoard,
       getState,
     }),
-    [move, undo, highlight, resetAllHighlightedSquares, resetBoard, getState]
+    [
+      move,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
+      highlight,
+      resetAllHighlightedSquares,
+      resetBoard,
+      getState,
+    ]
   );
 
   useImperativeHandle(ref, () => refValue, [refValue]);

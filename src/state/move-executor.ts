@@ -79,6 +79,11 @@ export const createMoveExecutor = (
     boardState.kingInCheckSquare.set(kingSquare);
   };
 
+  // Moves taken off the board by `undo`, newest last. `redo` replays from the
+  // top; anything that advances the game by another route clears it, because a
+  // stacked move no longer belongs to the position it was played in.
+  let undone: Move[] = [];
+
   const executeMove = (
     from: Square,
     to: Square,
@@ -102,6 +107,10 @@ export const createMoveExecutor = (
     }
 
     if (!move) return null;
+
+    // Playing on from an undone position diverges from that line — the stacked
+    // moves belong to a history that no longer exists.
+    undone = [];
 
     const fromState = boardState.squares[from];
     const toState = boardState.squares[to];
@@ -449,6 +458,8 @@ export const createMoveExecutor = (
     const move = chess.undo();
     if (!move) return null;
 
+    undone.push(move);
+
     // Reset the board, restoring the last-move highlight to the move that now
     // sits at the end of the history (rather than clearing it).
     const history = chess.history({ verbose: true });
@@ -461,6 +472,46 @@ export const createMoveExecutor = (
     return move;
   };
 
+  /**
+   * Replays the most recently undone move.
+   *
+   * Goes through `resetBoard`'s `slide` rather than `executeMove` so the piece
+   * animates back in the way it does when stepping through history — and so
+   * the redone move never re-enters the move callbacks. Redo is navigation,
+   * not play: `onMove` firing here would tell a consumer the player moved.
+   */
+  const redo = (): Move | null => {
+    const move = undone.pop();
+    if (!move) return null;
+
+    const applied = chess.move({
+      from: move.from,
+      to: move.to,
+      promotion: move.promotion,
+    });
+    if (!applied) {
+      // The position no longer accepts it (the stack should have been cleared);
+      // drop the rest rather than leaving a stack that can't be trusted.
+      undone = [];
+      return null;
+    }
+
+    resetBoard(chess.fen(), {
+      slide: { from: applied.from, to: applied.to },
+      lastMove: { from: applied.from, to: applied.to },
+    });
+
+    return applied;
+  };
+
+  const canUndo = (): boolean => chess.history().length > 0;
+  const canRedo = (): boolean => undone.length > 0;
+
+  /** Forget the redo stack — the game advanced by some other route. */
+  const clearRedo = (): void => {
+    undone = [];
+  };
+
   return {
     executeMove,
     tryMove,
@@ -468,6 +519,10 @@ export const createMoveExecutor = (
     isPromotionMove,
     resetBoard,
     undo,
+    redo,
+    canUndo,
+    canRedo,
+    clearRedo,
   };
 };
 
