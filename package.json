@@ -1,5 +1,5 @@
 {
-  "name": "react-native-chessboard",
+  "name": "@crewbeat/react-native-chessboard",
   "version": "0.3.0-beta.1",
   "description": "A lightweight, simple, and high-performing chessboard for React Native",
   "main": "lib/commonjs/index",
@@ -39,15 +39,19 @@
     "ios",
     "android"
   ],
-  "repository": "https://github.com/enzomanuelmangano/react-native-chessboard",
-  "author": "Enzo Manuel Mangano <enzomanuelmangano@gmail.com> (https://github.com/enzomanuelmangano)",
+  "repository": "https://github.com/Xelaan/react-native-chessboard",
+  "author": "Xelaan",
+  "contributors": [
+    "Enzo Manuel Mangano (original author)"
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/enzomanuelmangano/react-native-chessboard/issues"
+    "url": "https://github.com/Xelaan/react-native-chessboard/issues"
   },
-  "homepage": "https://github.com/enzomanuelmangano/react-native-chessboard#readme",
+  "homepage": "https://github.com/Xelaan/react-native-chessboard#readme",
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "dependencies": {
     "chess.js": "^1.0.0"
@@ -142,8 +146,18 @@
     "source": "src",
     "output": "lib",
     "targets": [
-      "commonjs",
-      "module",
+      [
+        "commonjs",
+        {
+          "configFile": true
+        }
+      ],
+      [
+        "module",
+        {
+          "configFile": true
+        }
+      ],
       [
         "typescript",
         {

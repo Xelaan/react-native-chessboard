@@ -1,4 +1,4 @@
-# Publish react-native-chessboard to npm on a version tag.
+# Publish @crewbeat/react-native-chessboard to npm on a version tag.
 #
 # Triggers:
 #   - push: tags 'v*' (release: build + publish to npm)
@@ -11,11 +11,17 @@
 # generated automatically from the same identity.
 #
 # One-time npmjs.com setup (until done, publish 403s):
-#   react-native-chessboard -> Settings -> Trusted Publisher ->
+#   @crewbeat/react-native-chessboard -> Settings -> Trusted Publisher ->
 #   add a GitHub Actions publisher:
-#     repository:  enzomanuelmangano/react-native-chessboard
+#     repository:  Xelaan/react-native-chessboard
 #     workflow:    release.yml
 #     environment: release
+#
+# NOTE for the very first release of this scoped name: npm can only
+# attach a trusted publisher to a package that already exists, so
+# 0.3.0-beta.1 may have to be published once from a workstation
+# (`npm publish --access public --tag beta` with 2FA). Every release
+# after that goes through this workflow with no token.
 #
 # One-time GitHub setup: Settings -> Environments -> create `release`
 # and add yourself as a required reviewer. A pushed tag then waits for
@@ -71,6 +77,11 @@ jobs:
       # Calling bob directly skips the husky install in the `prepare`
       # script, which is pointless in CI.
       - name: Build
+        # Production Babel env: keeps dev-only JSX transforms (and the
+        # absolute source paths they embed) out of the published files.
+        env:
+          BABEL_ENV: production
+          NODE_ENV: production
         run: bunx bob build
 
       - name: npm publish (OIDC + provenance)
