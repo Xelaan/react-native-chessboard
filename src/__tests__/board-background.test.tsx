@@ -1,5 +1,10 @@
 import React from 'react';
-import { Group, useFont, useImage } from '@shopify/react-native-skia';
+import {
+  Group,
+  matchFont,
+  useFont,
+  useImage,
+} from '@shopify/react-native-skia';
 import { makeSkImage } from '../__mocks__/react-native-skia';
 import { BoardBackground } from '../components/skia/board-background';
 import {
@@ -22,6 +27,7 @@ const baseConfig = (overrides: Partial<BoardConfig> = {}): BoardConfig => ({
   dragOffsetY: 0,
   dragHoverEnabled: true,
   dragHoverRingScale: 1.7,
+  coordinateScale: 0.18,
   dotScale: 0.16,
   dotRevealMs: 140,
   dotDismissMs: 100,
@@ -37,6 +43,8 @@ const baseConfig = (overrides: Partial<BoardConfig> = {}): BoardConfig => ({
     hoverSquare: 'rgba(255, 255, 255, 0.32)',
     hoverRing: 'rgba(255, 255, 255, 0.18)',
     legalMoveDot: 'rgba(0, 0, 0, 0.3)',
+    coordinateLight: '#62B1A8',
+    coordinateDark: '#D9FDF8',
     promotionPieceButton: '#FF9B71',
   },
   animations: {
@@ -172,6 +180,64 @@ describe('BoardBackground labels', () => {
       // Under the squares: a texture painted last would hide the board.
       expect(rects.length).toBeGreaterThan(0);
       (useImage as jest.Mock).mockReturnValue(null);
+    });
+  });
+
+  describe('coordinate labels', () => {
+    const labelColours = (config: BoardConfig) =>
+      findAllByType(
+        renderToTree(
+          <Group>
+            <BoardBackground config={config} />
+          </Group>
+        ),
+        'skia-text'
+      ).map((node) => (node.props as { color: string }).color);
+
+    it('colours a label by the square it sits on', () => {
+      // One colour for both would be unreadable on one of the two.
+      const colours = new Set(
+        labelColours(
+          baseConfig({
+            colors: {
+              ...baseConfig().colors,
+              coordinateLight: '#111111',
+              coordinateDark: '#eeeeee',
+            },
+          })
+        )
+      );
+
+      expect(colours).toEqual(new Set(['#111111', '#eeeeee']));
+    });
+
+    it('scales the label with the board', () => {
+      const sizeFor = (coordinateScale: number) => {
+        renderToTree(
+          <Group>
+            <BoardBackground config={baseConfig({ coordinateScale })} />
+          </Group>
+        );
+        // matchFont receives the resolved size.
+        const calls = (matchFont as jest.Mock).mock.calls;
+        return (calls[calls.length - 1][0] as { fontSize: number }).fontSize;
+      };
+
+      expect(sizeFor(0.3)).toBeGreaterThan(sizeFor(0.1));
+    });
+
+    it('never shrinks a label below legibility', () => {
+      renderToTree(
+        <Group>
+          <BoardBackground
+            config={baseConfig({ pieceSize: 20, coordinateScale: 0.05 })}
+          />
+        </Group>
+      );
+      const calls = (matchFont as jest.Mock).mock.calls;
+      const { fontSize } = calls[calls.length - 1][0] as { fontSize: number };
+
+      expect(fontSize).toBeGreaterThanOrEqual(8);
     });
   });
 });

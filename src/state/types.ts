@@ -91,6 +91,8 @@ export interface BoardConfig {
   dragHoverEnabled: boolean;
   /** Diameter of the hover disc, as a multiple of one square. */
   dragHoverRingScale: number;
+  /** Rank / file label size, as a fraction of one square. */
+  coordinateScale: number;
   /** Legal-move dot radius, as a fraction of one square. */
   dotScale: number;
   /** How long the dots take to appear / disappear, in ms. */
@@ -118,6 +120,12 @@ export interface BoardConfig {
     hoverRing: string;
     /** Legal-move dots and the capture wedges. */
     legalMoveDot: string;
+    /**
+     * Rank / file labels, by the colour of the square they sit on — a single
+     * label colour is unreadable on one of the two.
+     */
+    coordinateLight: string;
+    coordinateDark: string;
     promotionPieceButton: string;
   };
   animations: {

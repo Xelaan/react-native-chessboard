@@ -93,11 +93,23 @@ export const useBoardGesture = ({
         const squareState = boardState.squares[square];
         const piece = squareState.piece.get();
 
-        // With `playerSide` set, the other colour is not draggable at all —
-        // not raised, not snapped back. `'both'` keeps the original
-        // behaviour of picking up whatever was touched.
-        const controllable =
-          !!piece && (playerSide === 'both' || piece[0] === playerSide);
+        // Only pieces the player can actually move are picked up at all —
+        // not raised, not dragged, not snapped back. Two conditions, and
+        // both matter:
+        //
+        //   * it is ours: our colour when `playerSide` is set, whichever
+        //     side is to move in hot-seat / review (`'both'`)
+        //   * it is playable: our turn, or premoving into the opponent's
+        //
+        // Lifting an opponent piece and springing it back tells the player
+        // it was theirs to try, which is worse than nothing happening.
+        const turn = boardState.turn.get();
+        const mine =
+          !!piece &&
+          (playerSide === 'both' ? piece[0] === turn : piece[0] === playerSide);
+        const premoving =
+          premovesEnabled && playerSide !== 'both' && turn !== playerSide;
+        const controllable = mine && (premoving || piece?.[0] === turn);
 
         if (controllable) {
           // Store drag start info (but don't start drag yet)

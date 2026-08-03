@@ -60,6 +60,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
       dragOffsetY,
       dragHoverEnabled,
       dragHoverRingScale,
+      coordinateScale,
       dotScale,
       dotRevealMs,
       dotDismissMs,
@@ -93,6 +94,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
         dragOffsetY={dragOffsetY}
         dragHoverEnabled={dragHoverEnabled}
         dragHoverRingScale={dragHoverRingScale}
+        coordinateScale={coordinateScale}
         dotScale={dotScale}
         dotRevealMs={dotRevealMs}
         dotDismissMs={dotDismissMs}

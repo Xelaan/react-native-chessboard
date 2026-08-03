@@ -79,6 +79,7 @@ const config: BoardConfig = {
   dragOffsetY: 0,
   dragHoverEnabled: true,
   dragHoverRingScale: 1.7,
+  coordinateScale: 0.18,
   dotScale: 0.16,
   dotRevealMs: 140,
   dotDismissMs: 100,
@@ -94,6 +95,8 @@ const config: BoardConfig = {
     hoverSquare: 'rgba(255, 255, 255, 0.32)',
     hoverRing: 'rgba(255, 255, 255, 0.18)',
     legalMoveDot: 'rgba(0, 0, 0, 0.3)',
+    coordinateLight: '#62B1A8',
+    coordinateDark: '#D9FDF8',
     promotionPieceButton: '#FF9B71',
   },
   animations: {

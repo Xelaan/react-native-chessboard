@@ -78,6 +78,7 @@ const config: BoardConfig = {
   dragOffsetY: 0,
   dragHoverEnabled: true,
   dragHoverRingScale: 1.7,
+  coordinateScale: 0.18,
   dotScale: 0.16,
   dotRevealMs: 140,
   dotDismissMs: 100,
@@ -93,6 +94,8 @@ const config: BoardConfig = {
     hoverSquare: 'rgba(255, 255, 255, 0.32)',
     hoverRing: 'rgba(255, 255, 255, 0.18)',
     legalMoveDot: 'rgba(0, 0, 0, 0.3)',
+    coordinateLight: '#62B1A8',
+    coordinateDark: '#D9FDF8',
     promotionPieceButton: 'rgba(255, 255, 255, 0.8)',
   },
   animations: {
@@ -332,7 +335,11 @@ describe('drag lifecycle', () => {
       expect(square.zIndex.get()).toBe(100);
     });
 
-    it('leaves both colours draggable by default', () => {
+    it('will not pick up the side that is not to move, even in hot-seat', () => {
+      // `playerSide: 'both'` means "either player may move at this device",
+      // not "either colour may be dragged at any time". Lifting Black's pawn
+      // on White's turn and springing it back tells the player it was a legal
+      // thing to try.
       const chess = new Chess();
       const boardState = createMockBoardState(chess);
       const { pan } = mountGesture(boardState);
@@ -341,7 +348,54 @@ describe('drag lifecycle', () => {
       pan.simulateBegin(event(e7Center.x, e7Center.y));
       pan.simulateStart(event(e7Center.x, e7Center.y));
 
+      expect(square.zIndex.get()).toBe(0);
+    });
+
+    it('picks the other colour up once it is their move', () => {
+      const chess = new Chess();
+      chess.move('e4');
+      const boardState = createMockBoardState(chess);
+      const { pan } = mountGesture(boardState);
+      const square = boardState.squares[E7];
+
+      pan.simulateBegin(event(e7Center.x, e7Center.y));
+      pan.simulateStart(event(e7Center.x, e7Center.y));
+
       expect(square.zIndex.get()).toBe(100);
+    });
+
+    it('will not pick up our own piece off-turn without premoves', () => {
+      const chess = new Chess();
+      chess.move('e4');
+      const boardState = createMockBoardState(chess);
+      const { pan } = mountGesture(boardState, { playerSide: 'w' });
+      const square = boardState.squares[E2];
+
+      pan.simulateBegin(event(e2Center.x, e2Center.y));
+      pan.simulateStart(event(e2Center.x, e2Center.y));
+
+      expect(square.zIndex.get()).toBe(0);
+    });
+
+    it('picks our own piece up off-turn when premoves are on', () => {
+      const chess = new Chess();
+      chess.move('e4');
+      const boardState = createMockBoardState(chess);
+      const { pan } = mountGesture(boardState, {
+        playerSide: 'w',
+        premovesEnabled: true,
+      });
+      const d2 = 'd2' as Square;
+      const origin = squareToPosition(d2, PIECE_SIZE, false);
+      const centre = {
+        x: origin.x + PIECE_SIZE / 2,
+        y: origin.y + PIECE_SIZE / 2,
+      };
+
+      pan.simulateBegin(event(centre.x, centre.y));
+      pan.simulateStart(event(centre.x, centre.y));
+
+      expect(boardState.squares[d2].zIndex.get()).toBe(100);
     });
   });
 

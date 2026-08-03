@@ -50,6 +50,10 @@ const areBackgroundPropsEqual = (
     previousConfig.colors.white === nextConfig.colors.white &&
     previousConfig.colors.black === nextConfig.colors.black &&
     previousConfig.backgroundImage === nextConfig.backgroundImage &&
+    previousConfig.coordinateScale === nextConfig.coordinateScale &&
+    previousConfig.colors.coordinateLight ===
+      nextConfig.colors.coordinateLight &&
+    previousConfig.colors.coordinateDark === nextConfig.colors.coordinateDark &&
     (!rendersCoordinates || previousConfig.flipped === nextConfig.flipped)
   );
 };
@@ -64,9 +68,10 @@ export const BoardBackground: React.FC<BoardBackgroundProps> = React.memo(
       withNumbers,
       fontSource,
       backgroundImage,
+      coordinateScale,
     } = config;
 
-    const fontSize = pieceSize * 0.15;
+    const fontSize = Math.max(8, Math.round(pieceSize * coordinateScale));
 
     // When the consumer ships a custom font asset (e.g. require('./Inter.ttf'))
     // useFont decodes it asynchronously and may briefly return null on the
@@ -115,7 +120,9 @@ export const BoardBackground: React.FC<BoardBackgroundProps> = React.memo(
         );
 
         if (withLetters && row === 7) {
-          const labelColor = isLight ? colors.black : colors.white;
+          const labelColor = isLight
+            ? colors.coordinateLight
+            : colors.coordinateDark;
           labels.push(
             <Text
               key={`col-${col}`}
@@ -129,7 +136,9 @@ export const BoardBackground: React.FC<BoardBackgroundProps> = React.memo(
         }
 
         if (withNumbers && col === 0) {
-          const labelColor = isLight ? colors.black : colors.white;
+          const labelColor = isLight
+            ? colors.coordinateLight
+            : colors.coordinateDark;
           labels.push(
             <Text
               key={`row-${row}`}
