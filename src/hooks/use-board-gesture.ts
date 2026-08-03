@@ -22,7 +22,7 @@ export const useBoardGesture = ({
   gestureEnabled,
   onIllegalMove,
 }: UseBoardGestureProps) => {
-  const { pieceSize, animations, flipped } = config;
+  const { pieceSize, animations, flipped, playerSide } = config;
 
   // Track the currently dragged piece
   const draggedSquare = useSharedValue<Square | null>(null);
@@ -73,7 +73,13 @@ export const useBoardGesture = ({
         const squareState = boardState.squares[square];
         const piece = squareState.piece.get();
 
-        if (piece) {
+        // With `playerSide` set, the other colour is not draggable at all —
+        // not raised, not snapped back. `'both'` keeps the original
+        // behaviour of picking up whatever was touched.
+        const controllable =
+          !!piece && (playerSide === 'both' || piece[0] === playerSide);
+
+        if (controllable) {
           // Store drag start info (but don't start drag yet)
           draggedSquare.set(square);
           dragStartX.set(squareState.translateX.get());
@@ -101,8 +107,11 @@ export const useBoardGesture = ({
         squareState.zIndex.set(100);
         squareState.scale.set(withSpring(1.1, animations.scale));
 
-        // Only show valid moves (dots) for own pieces
-        const isOwnPiece = piece && piece[0] === turn;
+        // Only show valid moves (dots) for own pieces we're allowed to move
+        const isOwnPiece =
+          piece &&
+          piece[0] === turn &&
+          (playerSide === 'both' || piece[0] === playerSide);
         if (isOwnPiece) {
           scheduleOnRN(handleSelectPiece, square);
         }
@@ -146,7 +155,10 @@ export const useBoardGesture = ({
         // Check if this is own piece - only own pieces can make moves
         const piece = squareState.piece.get();
         const turn = boardState.turn.get();
-        const isOwnPiece = piece && piece[0] === turn;
+        const isOwnPiece =
+          piece &&
+          piece[0] === turn &&
+          (playerSide === 'both' || piece[0] === playerSide);
 
         // If not own piece, just snap back (can't make moves with opponent's pieces)
         if (!isOwnPiece) {
@@ -245,7 +257,10 @@ export const useBoardGesture = ({
         const selectedSquare = boardState.selectedSquare.get();
         const piece = boardState.squares[square].piece.get();
         const turn = boardState.turn.get();
-        const isOwnPiece = piece && piece[0] === turn;
+        const isOwnPiece =
+          piece &&
+          piece[0] === turn &&
+          (playerSide === 'both' || piece[0] === playerSide);
 
         // Case 1: No piece selected - try to select own piece
         if (!selectedSquare) {
@@ -294,6 +309,7 @@ export const useBoardGesture = ({
     touchOffsetY,
     animations,
     gestureEnabled,
+    playerSide,
     handleTryMove,
     handleSelectPiece,
     handleIllegalMove,

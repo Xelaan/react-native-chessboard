@@ -71,6 +71,7 @@ const config: BoardConfig = {
   boardSize: PIECE_SIZE * 8,
   pieceSize: PIECE_SIZE,
   gestureEnabled: true,
+  playerSide: 'both' as const,
   flipped: false,
   withLetters: false,
   withNumbers: false,

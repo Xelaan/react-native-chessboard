@@ -64,6 +64,12 @@ export interface BoardConfig {
   boardSize: number;
   pieceSize: number;
   gestureEnabled: boolean;
+  /**
+   * Which colour this device may pick up. `'both'` (the default) is
+   * hot-seat / review; `'w'` or `'b'` is a real game, where touching the
+   * opponent's pieces should do nothing at all.
+   */
+  playerSide: Color | 'both';
   flipped: boolean;
   withLetters: boolean;
   withNumbers: boolean;

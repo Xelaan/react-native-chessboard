@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { Chess } from 'chess.js';
+import type { Color } from 'chess.js';
 import type { BoardState, BoardConfig } from './types';
 import { useBoardState } from './use-board-state';
 import { Dimensions } from 'react-native';
@@ -26,6 +27,11 @@ export type BoardStateProviderProps = {
   fen?: string;
   boardSize?: number;
   gestureEnabled?: boolean;
+  /**
+   * Restricts dragging to one colour. Omit (or pass `'both'`) for hot-seat
+   * and review boards, where either side may be moved.
+   */
+  playerSide?: Color | 'both';
   flipped?: boolean;
   withLetters?: boolean;
   withNumbers?: boolean;
@@ -52,6 +58,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
   fen,
   boardSize = DEFAULT_BOARD_SIZE,
   gestureEnabled = true,
+  playerSide = 'both',
   flipped = false,
   withLetters = true,
   withNumbers = true,
@@ -65,6 +72,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
       boardSize,
       pieceSize,
       gestureEnabled,
+      playerSide,
       flipped,
       withLetters,
       withNumbers,
@@ -76,6 +84,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
       boardSize,
       pieceSize,
       gestureEnabled,
+      playerSide,
       flipped,
       withLetters,
       withNumbers,

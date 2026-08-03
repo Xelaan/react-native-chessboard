@@ -69,6 +69,7 @@ const config: BoardConfig = {
   boardSize: PIECE_SIZE * 8,
   pieceSize: PIECE_SIZE,
   gestureEnabled: true,
+  playerSide: 'both' as const,
   flipped: false,
   withLetters: false,
   withNumbers: false,
@@ -95,7 +96,11 @@ const event = (x: number, y: number) => ({
 });
 
 /** Mounts the hook and hands back the pan gesture the board actually uses. */
-const mountGesture = (boardState: BoardState) => {
+const mountGesture = (
+  boardState: BoardState,
+  overrides: Partial<BoardConfig> = {}
+) => {
+  const boardConfig: BoardConfig = { ...config, ...overrides };
   const moveExecutor = {
     tryMove: jest.fn(),
     selectPiece: jest.fn(),
@@ -106,7 +111,7 @@ const mountGesture = (boardState: BoardState) => {
   const Probe = () => {
     const gesture = useBoardGesture({
       boardState,
-      config,
+      config: boardConfig,
       moveExecutor,
       gestureEnabled: true,
     }) as unknown as { gestures: [unknown, MockPanGesture] };
@@ -275,5 +280,52 @@ describe('drag lifecycle', () => {
     pan.simulateEnd(event(e2Center.x, e2Center.y));
 
     expect(square.zIndex.get()).toBe(100);
+  });
+
+  describe('playerSide', () => {
+    // e7 is a black pawn: the piece a white-locked board must not touch.
+    const E7 = 'e7' as Square;
+    const e7Origin = squareToPosition(E7, PIECE_SIZE, false);
+    const e7Center = {
+      x: e7Origin.x + PIECE_SIZE / 2,
+      y: e7Origin.y + PIECE_SIZE / 2,
+    };
+
+    it("does not pick up the other colour's piece", () => {
+      const chess = new Chess();
+      const boardState = createMockBoardState(chess);
+      const { pan } = mountGesture(boardState, { playerSide: 'w' });
+      const square = boardState.squares[E7];
+
+      pan.simulateBegin(event(e7Center.x, e7Center.y));
+      pan.simulateStart(event(e7Center.x, e7Center.y));
+
+      // Never raised, so it cannot be dragged or snapped back either.
+      expect(square.zIndex.get()).toBe(0);
+    });
+
+    it('still picks up its own pieces', () => {
+      const chess = new Chess();
+      const boardState = createMockBoardState(chess);
+      const { pan } = mountGesture(boardState, { playerSide: 'w' });
+      const square = boardState.squares[E2];
+
+      pan.simulateBegin(event(e2Center.x, e2Center.y));
+      pan.simulateStart(event(e2Center.x, e2Center.y));
+
+      expect(square.zIndex.get()).toBe(100);
+    });
+
+    it('leaves both colours draggable by default', () => {
+      const chess = new Chess();
+      const boardState = createMockBoardState(chess);
+      const { pan } = mountGesture(boardState);
+      const square = boardState.squares[E7];
+
+      pan.simulateBegin(event(e7Center.x, e7Center.y));
+      pan.simulateStart(event(e7Center.x, e7Center.y));
+
+      expect(square.zIndex.get()).toBe(100);
+    });
   });
 });

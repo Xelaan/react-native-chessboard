@@ -75,6 +75,7 @@ describe('createMoveExecutor', () => {
     boardSize: 400,
     pieceSize: PIECE_SIZE,
     gestureEnabled: true,
+    playerSide: 'both' as const,
     flipped: false,
     withLetters: false,
     withNumbers: false,

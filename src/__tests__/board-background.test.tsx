@@ -15,6 +15,7 @@ const baseConfig = (overrides: Partial<BoardConfig> = {}): BoardConfig => ({
   boardSize: 400,
   pieceSize: 50,
   gestureEnabled: true,
+  playerSide: 'both' as const,
   flipped: false,
   withLetters: true,
   withNumbers: true,
