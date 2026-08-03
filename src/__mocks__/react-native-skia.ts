@@ -99,11 +99,28 @@ export const Skia = {
     Make: () => {
       const circles: Array<{ x: number; y: number; radius: number }> = [];
       const rects: unknown[] = [];
+      // Point list for line-drawn shapes (arrows), in the order they were
+      // added, so tests can assert the shaft and head geometry.
+      const points: Array<{ x: number; y: number }> = [];
       const path = {
         __mock: 'SkPath',
         circles,
         rects,
+        points,
+        closed: false,
         fillType: 0,
+        moveTo: (x: number, y: number) => {
+          points.push({ x, y });
+          return path;
+        },
+        lineTo: (x: number, y: number) => {
+          points.push({ x, y });
+          return path;
+        },
+        close: () => {
+          path.closed = true;
+          return path;
+        },
         addCircle: (x: number, y: number, radius: number) => {
           circles.push({ x, y, radius });
           return path;

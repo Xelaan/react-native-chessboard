@@ -18,6 +18,19 @@ type ChessMove = {
 
 type EffectTrigger = 'checkmate' | 'check' | 'stalemate' | '';
 
+/**
+ * An arrow drawn between two squares — coach lines, puzzle hints. Static: it
+ * is an annotation, not an animation.
+ */
+interface Arrow {
+  from: Square;
+  to: Square;
+  /** Defaults to an amber the board picks. */
+  color?: string;
+  /** Shaft thickness as a fraction of one square. Defaults to `0.18`. */
+  width?: number;
+}
+
 /** Glyph shown inside a {@link SquareMark} badge. */
 type SquareMarkIcon = 'cross' | 'check';
 
@@ -63,4 +76,5 @@ export type {
   EffectTrigger,
   SquareMark,
   SquareMarkIcon,
+  Arrow,
 };
