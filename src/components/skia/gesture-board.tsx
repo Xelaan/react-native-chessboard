@@ -300,6 +300,7 @@ export const GestureBoard = forwardRef<ChessboardRef, GestureBoardProps>(
         />
         {showPromotion && promotionInfoRef.current && (
           <PromotionDialog
+            spriteSource={spriteSource}
             color={promotionInfoRef.current.color}
             onSelect={handlePromotionSelect}
             onCancel={handlePromotionCancel}

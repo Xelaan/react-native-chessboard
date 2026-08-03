@@ -4,7 +4,7 @@ import { Image as RNImage } from 'react-native';
 import { Skia, useImage } from '@shopify/react-native-skia';
 import type { SkImage } from '@shopify/react-native-skia';
 
-const DEFAULT_SPRITE_SOURCE = require('./pieces-sprite.png');
+export const DEFAULT_SPRITE_SOURCE = require('./pieces-sprite.png');
 
 // Decoded sprite sheets, keyed by resolved asset URI. Held for the lifetime of
 // the app so every board after the first — or after a preload — draws its

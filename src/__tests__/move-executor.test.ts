@@ -106,6 +106,8 @@ describe('createMoveExecutor', () => {
       coordinateLight: '#62B1A8',
       coordinateDark: '#D9FDF8',
       promotionPieceButton: 'rgba(255, 255, 255, 0.8)',
+      promotionDialogBackground: '#fff',
+      promotionOverlay: 'rgba(0, 0, 0, 0.4)',
     },
     animations: {
       move: MOVE_SPRING,

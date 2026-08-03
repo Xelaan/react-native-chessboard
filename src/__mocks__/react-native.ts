@@ -1,3 +1,5 @@
+import { createElement } from 'react';
+
 // Minimal stand-in for react-native.
 //
 // The real package ships Flow-typed ESM that jest cannot parse without the
@@ -37,11 +39,18 @@ export const Platform = {
   }): T | undefined => specifics.ios ?? specifics.default,
 };
 
-export const Image = {
-  resolveAssetSource: (source: unknown) =>
-    typeof source === 'number' ? { uri: `asset://${source}` } : source,
-};
+// A component *and* a namespace, as the real one is: `piece-images` calls
+// `Image.resolveAssetSource`, while the promotion dialog renders `<Image>`.
+// Rendering a host element named 'Image' keeps it findable by type in tests.
+export const Image = Object.assign(
+  (props: Record<string, unknown>) => createElement('Image', props),
+  {
+    resolveAssetSource: (source: unknown) =>
+      typeof source === 'number' ? { uri: `asset://${source}` } : source,
+  }
+);
 
 export const View = 'View';
 export const Text = 'Text';
 export const Pressable = 'Pressable';
+export const TouchableOpacity = 'TouchableOpacity';

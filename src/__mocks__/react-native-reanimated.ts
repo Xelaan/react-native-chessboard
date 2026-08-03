@@ -90,6 +90,18 @@ export const useAnimatedStyle = <T>(factory: () => T): T => factory();
 
 // Animated views render as plain hosts, so a tree can be searched for them by
 // name like any other RN element.
+// Entering/exiting builders are chainable in the real library; tests only
+// care that a component using them renders.
+const layoutAnimation = () => {
+  const builder: Record<string, unknown> = {};
+  for (const method of ['duration', 'delay', 'springify', 'easing']) {
+    builder[method] = () => builder;
+  }
+  return builder;
+};
+export const FadeIn = layoutAnimation();
+export const FadeOut = layoutAnimation();
+
 export const Animated = {
   View: 'Animated.View',
   Text: 'Animated.Text',
@@ -97,6 +109,8 @@ export const Animated = {
 
 export default {
   ...Animated,
+  FadeIn,
+  FadeOut,
   useAnimatedStyle,
   useAnimatedReaction,
   useSharedValue,

@@ -62,6 +62,8 @@ const makeConfig = (overrides: Partial<BoardConfig> = {}): BoardConfig => ({
     coordinateLight: '#62B1A8',
     coordinateDark: '#D9FDF8',
     promotionPieceButton: '#FF9B71',
+    promotionDialogBackground: '#fff',
+    promotionOverlay: 'rgba(0, 0, 0, 0.4)',
   },
   animations: {
     move: MOVE_SPRING,

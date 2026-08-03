@@ -131,6 +131,10 @@ export interface BoardConfig {
     coordinateLight: string;
     coordinateDark: string;
     promotionPieceButton: string;
+    /** The picker's own panel. */
+    promotionDialogBackground: string;
+    /** The scrim over the board behind it. */
+    promotionOverlay: string;
   };
   animations: {
     move: WithSpringConfig;
