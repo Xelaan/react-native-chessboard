@@ -29,6 +29,7 @@ export const useBoardGesture = ({
     playerSide,
     premovesEnabled,
     dragScale,
+    tapScale,
     dragOffsetY,
     dragHoverEnabled,
   } = config;
@@ -326,6 +327,36 @@ export const useBoardGesture = ({
         draggedSquare.set(null);
       });
 
+    // Lift the tapped piece the way a drag does, and drop the previous one
+    // back. Tap-to-move otherwise gave no feedback that a piece was picked
+    // up at all — the dots appeared, but nothing said which piece they
+    // belonged to.
+    const selectPiece = (square: Square) => {
+      'worklet';
+      const previous = boardState.selectedSquare.get();
+      if (previous && previous !== square) {
+        boardState.squares[previous].scale.set(withSpring(1, animations.scale));
+        boardState.squares[previous].zIndex.set(0);
+      }
+      boardState.squares[square].scale.set(
+        withSpring(tapScale, animations.scale)
+      );
+      // Above resting pieces so a grown piece isn't clipped by its
+      // neighbours, but below a dragged one.
+      boardState.squares[square].zIndex.set(50);
+    };
+
+    const clearSelection = () => {
+      'worklet';
+      const previous = boardState.selectedSquare.get();
+      if (previous) {
+        boardState.squares[previous].scale.set(withSpring(1, animations.scale));
+        boardState.squares[previous].zIndex.set(0);
+      }
+      boardState.selectedSquare.set(null);
+      boardState.validMoves.set([]);
+    };
+
     // Add tap gesture for selecting pieces
     const tapGesture = Gesture.Tap()
       .enabled(gestureEnabled)
@@ -344,6 +375,7 @@ export const useBoardGesture = ({
         // Case 1: No piece selected - try to select own piece
         if (!selectedSquare) {
           if (isOwnPiece) {
+            selectPiece(square);
             scheduleOnRN(handleSelectPiece, square);
           }
           return;
@@ -351,27 +383,32 @@ export const useBoardGesture = ({
 
         // Case 2: Tapped on same piece - deselect
         if (square === selectedSquare) {
-          boardState.selectedSquare.set(null);
-          boardState.validMoves.set([]);
+          clearSelection();
           return;
         }
 
         // Case 3: Tapped on valid move target - execute move
         const validMoves = boardState.validMoves.get();
         if (validMoves.includes(square)) {
+          // Settle the piece before it travels: the move animation starts
+          // from wherever the sprite is, and a grown piece would shrink
+          // mid-flight.
+          boardState.squares[selectedSquare].scale.set(
+            withSpring(1, animations.scale)
+          );
           scheduleOnRN(handleTryMove, selectedSquare, square);
           return;
         }
 
         // Case 4: Tapped on another own piece - switch selection
         if (isOwnPiece) {
+          selectPiece(square);
           scheduleOnRN(handleSelectPiece, square);
           return;
         }
 
         // Case 5: Invalid target - deselect
-        boardState.selectedSquare.set(null);
-        boardState.validMoves.set([]);
+        clearSelection();
       });
 
     // Combine gestures - pan takes precedence
@@ -391,6 +428,7 @@ export const useBoardGesture = ({
     playerSide,
     premovesEnabled,
     dragScale,
+    tapScale,
     dragHoverEnabled,
     liftPx,
     handleQueuePremove,

@@ -36,6 +36,8 @@ export type BoardStateProviderProps = {
   premovesEnabled?: boolean;
   /** Scale a piece grows to while it is picked up. Default `1.2`. */
   dragScale?: number;
+  /** Scale a tapped (selected) piece grows to. Default `1.08`. */
+  tapScale?: number;
   /**
    * Lift the rendered dragged piece above the finger, as a fraction of one
    * square. Visual only — the drop target tracks the finger. Default `0`.
@@ -72,6 +74,7 @@ const defaultColors: BoardConfig['colors'] = {
   lastMoveHighlight: 'rgba(255,255,0, 0.5)',
   checkmateHighlight: '#E84855',
   premoveHighlight: 'rgba(231, 76, 60, 0.55)',
+  selectedSquare: 'rgba(255, 255, 0, 0.5)',
   hoverSquare: 'rgba(255, 255, 255, 0.32)',
   hoverRing: 'rgba(255, 255, 255, 0.18)',
   legalMoveDot: 'rgba(0, 0, 0, 0.3)',
@@ -96,6 +99,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
   playerSide = 'both',
   premovesEnabled = false,
   dragScale = 1.2,
+  tapScale = 1.08,
   dragOffsetY = 0,
   dragHoverEnabled = true,
   dragHoverRingScale = 1.7,
@@ -121,6 +125,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
       playerSide,
       premovesEnabled,
       dragScale,
+      tapScale,
       dragOffsetY,
       dragHoverEnabled,
       dragHoverRingScale,
@@ -143,6 +148,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
       playerSide,
       premovesEnabled,
       dragScale,
+      tapScale,
       dragOffsetY,
       dragHoverEnabled,
       dragHoverRingScale,

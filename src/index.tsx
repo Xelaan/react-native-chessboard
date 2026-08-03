@@ -57,6 +57,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
       playerSide,
       premovesEnabled,
       dragScale,
+      tapScale,
       dragOffsetY,
       dragHoverEnabled,
       dragHoverRingScale,
@@ -91,6 +92,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
         playerSide={playerSide}
         premovesEnabled={premovesEnabled}
         dragScale={dragScale}
+        tapScale={tapScale}
         dragOffsetY={dragOffsetY}
         dragHoverEnabled={dragHoverEnabled}
         dragHoverRingScale={dragHoverRingScale}

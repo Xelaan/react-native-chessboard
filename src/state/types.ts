@@ -80,6 +80,8 @@ export interface BoardConfig {
   premovesEnabled: boolean;
   /** Scale a piece grows to while it is picked up. */
   dragScale: number;
+  /** Scale a piece grows to when tapped (selected without dragging). */
+  tapScale: number;
   /**
    * Lift the *rendered* dragged piece above the finger, as a fraction of one
    * square, so it isn't hidden under it. Purely visual: the targeted cell —
@@ -114,6 +116,8 @@ export interface BoardConfig {
     checkmateHighlight: string;
     /** Tint on the two squares of a queued premove. */
     premoveHighlight: string;
+    /** Fill on the selected piece's own square. */
+    selectedSquare: string;
     /** Fill on the cell under the finger while dragging. */
     hoverSquare: string;
     /** The disc drawn around that cell. */

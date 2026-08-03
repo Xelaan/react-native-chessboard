@@ -34,6 +34,15 @@ const SquareHighlight: React.FC<SquareHighlightProps> = React.memo(
       withTiming(squareState.inCheck.get() ? 1 : 0, FADE_OPTIONS)
     );
 
+    // The selected piece's own square. Tap-to-move needs it: the dots say
+    // where you can go, this says what is going.
+    const selectedOpacity = useDerivedValue(() =>
+      withTiming(
+        boardState.selectedSquare.get() === square ? 1 : 0,
+        FADE_OPTIONS
+      )
+    );
+
     const customColor = useDerivedValue(
       () => highlightState.color.get() ?? 'transparent'
     );
@@ -59,6 +68,14 @@ const SquareHighlight: React.FC<SquareHighlightProps> = React.memo(
           height={pieceSize}
           color={colors.checkmateHighlight}
           opacity={checkOpacity}
+        />
+        <Rect
+          x={position.x}
+          y={position.y}
+          width={pieceSize}
+          height={pieceSize}
+          color={colors.selectedSquare}
+          opacity={selectedOpacity}
         />
         <Rect
           x={position.x}
