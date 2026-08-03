@@ -47,6 +47,10 @@ const config: BoardConfig = {
     promotionPieceButton: 'rgba(255, 255, 255, 0.8)',
     promotionDialogBackground: '#fff',
     promotionOverlay: 'rgba(0, 0, 0, 0.4)',
+    gameOverWinner: '#81b64c',
+    gameOverLoser: '#fa412d',
+    gameOverDraw: '#8b8987',
+    gameOverAccent: '#ffffff',
   },
   animations: {
     move: MOVE_SPRING,
@@ -95,24 +99,27 @@ describe('GameOverBadges', () => {
     expect(labelsOf(undefined)).toEqual([]);
   });
 
-  it('badges the loser with the reason and the winner with the winner label', () => {
+  it('labels the loser with the reason and the winner with the winner label', () => {
     const labels = labelsOf({ reason: 'checkmate', winner: 'w' });
 
     expect(labels).toContain('Checkmate');
     expect(labels).toContain('Winner');
   });
 
-  it('badges both kings with the reason on a draw', () => {
+  it('labels both kings with the reason on a draw', () => {
     const labels = labelsOf({ reason: 'stalemate' });
 
     expect(labels).toEqual(['Stalemate', 'Stalemate']);
     expect(labels).not.toContain('Winner');
   });
 
-  it('falls back to the raw reason when the app supplies no copy', () => {
+  it('falls back to readable English when the app supplies no copy', () => {
+    // Matching the view-tree board, which ships defaults rather than
+    // surfacing the raw reason key.
     const labels = labelsOf({ reason: 'timeout', winner: 'b' }, {});
 
-    expect(labels).toContain('timeout');
+    expect(labels).toContain('Timeout');
+    expect(labels).toContain('Winner');
   });
 
   it('says the same thing whichever side won', () => {

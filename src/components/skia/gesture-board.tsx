@@ -281,6 +281,9 @@ export const GestureBoard = forwardRef<ChessboardRef, GestureBoardProps>(
         <GestureDetector gesture={gesture}>
           <View style={containerStyle}>
             <SkiaBoard
+              gameResult={gameResult}
+              whiteKingSquare={findKingSquare(chess, 'w')}
+              blackKingSquare={findKingSquare(chess, 'b')}
               marks={marks}
               arrows={arrows}
               highlightedSquares={highlightedSquares}
@@ -292,6 +295,9 @@ export const GestureBoard = forwardRef<ChessboardRef, GestureBoardProps>(
             />
           </View>
         </GestureDetector>
+        {/* Only the label pills are views — the badges themselves are drawn
+            in the canvas above. Text is why: the labels are the consumer's, in
+            whatever language they use. */}
         <GameOverBadges
           chess={chess}
           config={config}

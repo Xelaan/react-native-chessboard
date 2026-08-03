@@ -135,6 +135,11 @@ export interface BoardConfig {
     promotionDialogBackground: string;
     /** The scrim over the board behind it. */
     promotionOverlay: string;
+    /** Game-over badges: the winner's, the loser's, a draw's, and the glyph. */
+    gameOverWinner: string;
+    gameOverLoser: string;
+    gameOverDraw: string;
+    gameOverAccent: string;
   };
   animations: {
     move: WithSpringConfig;

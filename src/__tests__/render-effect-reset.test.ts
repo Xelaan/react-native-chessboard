@@ -102,6 +102,10 @@ const config: BoardConfig = {
     promotionPieceButton: '#FF9B71',
     promotionDialogBackground: '#fff',
     promotionOverlay: 'rgba(0, 0, 0, 0.4)',
+    gameOverWinner: '#81b64c',
+    gameOverLoser: '#fa412d',
+    gameOverDraw: '#8b8987',
+    gameOverAccent: '#ffffff',
   },
   animations: {
     move: MOVE_SPRING,

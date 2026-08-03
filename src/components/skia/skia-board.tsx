@@ -4,9 +4,11 @@ import type { SkImage } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 import { StyleSheet } from 'react-native';
 import type { BoardConfig, BoardState } from '../../state';
+import type { Square } from 'chess.js';
 import type {
   Arrow,
   EffectParams,
+  GameResult,
   SquareHighlight,
   SquareMark,
 } from '../../types';
@@ -18,6 +20,7 @@ import { SkiaMarks } from './skia-marks';
 import { SkiaArrows } from './skia-arrows';
 import { SkiaSquareHighlights } from './skia-square-highlights';
 import { SkiaHover } from './skia-hover';
+import { SkiaGameOver } from './skia-game-over';
 
 const styles = StyleSheet.create({
   canvas: {
@@ -34,6 +37,9 @@ interface SkiaBoardProps {
   marks?: SquareMark[];
   arrows?: Arrow[];
   highlightedSquares?: SquareHighlight[];
+  gameResult?: GameResult | null;
+  whiteKingSquare?: Square | null;
+  blackKingSquare?: Square | null;
 }
 
 /**
@@ -63,6 +69,9 @@ const areVisualPropsEqual = (
     previous.marks === next.marks &&
     previous.arrows === next.arrows &&
     previous.highlightedSquares === next.highlightedSquares &&
+    previous.gameResult === next.gameResult &&
+    previous.whiteKingSquare === next.whiteKingSquare &&
+    previous.blackKingSquare === next.blackKingSquare &&
     previousConfig.boardSize === nextConfig.boardSize &&
     previousConfig.pieceSize === nextConfig.pieceSize &&
     previousConfig.flipped === nextConfig.flipped &&
@@ -88,6 +97,9 @@ export const SkiaBoard: React.FC<SkiaBoardProps> = React.memo(
     marks,
     arrows,
     highlightedSquares,
+    gameResult,
+    whiteKingSquare,
+    blackKingSquare,
   }) => {
     const { boardSize, pieceSize } = config;
 
@@ -132,6 +144,14 @@ export const SkiaBoard: React.FC<SkiaBoardProps> = React.memo(
             be hidden by the piece it is judging. */}
         <SkiaArrows config={config} arrows={arrows} />
         <SkiaMarks config={config} marks={marks} />
+        {/* Last: the result is the final word on the position, so nothing
+            draws over it. */}
+        <SkiaGameOver
+          config={config}
+          result={gameResult}
+          whiteKingSquare={whiteKingSquare ?? null}
+          blackKingSquare={blackKingSquare ?? null}
+        />
       </>
     );
 

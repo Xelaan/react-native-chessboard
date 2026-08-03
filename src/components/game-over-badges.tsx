@@ -1,81 +1,129 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import type { Chess, Color, Square } from 'chess.js';
 
 import { findKingSquare } from '../helpers/find-king-square';
+import { gameOverBadgeCenter } from './skia/skia-game-over';
 import { squareToPosition } from '../state/use-board-state';
 import type { BoardConfig } from '../state/types';
-import type { GameOverLabels, GameResult } from '../types';
+import type { GameOverLabels, GameOverReason, GameResult } from '../types';
 
-// Badge sizing, as fractions of one square.
-const BADGE_SIZE = 0.62;
-const WINNER_DELAY_MS = 120;
-const SPRING = { damping: 12, stiffness: 180 } as const;
+// Matches the badge choreography in `skia-game-over`: the pill fades in during
+// the grow, breathes through the hold, and is gone by the time the badge
+// settles into the corner.
+const GROW_MS = 300;
+const HOLD_MS = 800;
+const SETTLE_MS = 350;
+const EDGE_PAD = 2;
 
-const LOSER_COLOR = '#fa412d';
-const WINNER_COLOR = '#81b64c';
-const DRAW_COLOR = '#8b8987';
-const ACCENT = '#ffffff';
+const DEFAULT_LABELS: Record<string, string> = {
+  winner: 'Winner',
+  checkmate: 'Checkmate',
+  stalemate: 'Stalemate',
+  draw: 'Draw',
+  resign: 'Resigned',
+  timeout: 'Timeout',
+  abandon: 'Abandoned',
+};
 
-/** Draws badge both kings; decisive results badge loser and winner apart. */
-const isDraw = (reason: GameResult['reason']): boolean =>
-  reason === 'draw' || reason === 'stalemate';
+const clamp = (value: number, lo: number, hi: number): number =>
+  Math.min(Math.max(value, lo), hi);
 
-interface BadgeProps {
+interface PillProps {
   square: Square;
   label: string;
-  color: string;
-  delayMs: number;
+  winner: boolean;
+  draw: boolean;
   config: BoardConfig;
+  startDelayMs: number;
 }
 
-const Badge: React.FC<BadgeProps> = ({
+const Pill: React.FC<PillProps> = ({
   square,
   label,
-  color,
-  delayMs,
+  winner,
+  draw,
   config,
+  startDelayMs,
 }) => {
-  const { pieceSize, flipped } = config;
-  const { x, y } = squareToPosition(square, pieceSize, flipped);
-  const size = pieceSize * BADGE_SIZE;
-  const pop = useSharedValue(0);
+  const { pieceSize, flipped, colors, boardSize } = config;
+  const { y } = squareToPosition(square, pieceSize, flipped);
+  const badge = gameOverBadgeCenter(square, config);
+
+  const fill = winner
+    ? colors.gameOverWinner
+    : draw
+    ? colors.gameOverDraw
+    : colors.gameOverLoser;
+
+  // Placement needs the measured width; the pill starts fully transparent and
+  // the animation is delayed, so the one-frame pre-measure position is never
+  // on screen.
+  const [width, setWidth] = useState(0);
+  const height = pieceSize * 0.52;
+  const left = clamp(
+    badge.x - width / 2,
+    EDGE_PAD,
+    Math.max(EDGE_PAD, boardSize - width - EDGE_PAD)
+  );
+  const top = clamp(y - height * 0.9, EDGE_PAD, boardSize - height - EDGE_PAD);
+
+  const progress = useSharedValue(0);
 
   useEffect(() => {
-    pop.value = withDelay(delayMs, withSpring(1, SPRING));
-  }, [pop, delayMs, square, label]);
+    progress.value = 0;
+    progress.value = withDelay(
+      startDelayMs,
+      withTiming(1, { duration: GROW_MS, easing: Easing.out(Easing.cubic) })
+    );
+    // Out on the same beat the badge starts settling into the corner.
+    progress.value = withDelay(
+      startDelayMs + GROW_MS + HOLD_MS,
+      withTiming(0, { duration: SETTLE_MS, easing: Easing.inOut(Easing.cubic) })
+    );
+  }, [progress, square, label, startDelayMs]);
 
   const style = useAnimatedStyle(() => ({
-    opacity: pop.value,
-    transform: [{ scale: 0.6 + pop.value * 0.4 }],
+    opacity: progress.value,
+    transform: [
+      { translateY: (1 - progress.value) * pieceSize * 0.15 },
+      { scale: 0.8 + 0.2 * progress.value },
+    ],
   }));
 
   return (
     <Animated.View
       pointerEvents="none"
+      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
       style={[
-        styles.badge,
+        styles.pill,
         {
-          left: x + pieceSize / 2 - size / 2,
-          top: y + pieceSize / 2 - size / 2,
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: color,
+          left,
+          top,
+          height,
+          borderRadius: height / 2,
+          paddingHorizontal: pieceSize * 0.24,
+          backgroundColor: winner ? colors.gameOverAccent : fill,
         },
         style,
       ]}
     >
       <Text
         numberOfLines={1}
-        adjustsFontSizeToFit
-        style={[styles.label, { fontSize: size * 0.34 }]}
+        style={[
+          styles.label,
+          {
+            color: winner ? colors.gameOverWinner : colors.gameOverAccent,
+            fontSize: Math.max(10, pieceSize * 0.26),
+          },
+        ]}
       >
         {label}
       </Text>
@@ -87,81 +135,86 @@ export interface GameOverBadgesProps {
   chess: Chess;
   config: BoardConfig;
   result?: GameResult | null;
-  /** Localized text; the library ships no copy of its own. */
   labels?: GameOverLabels;
+  startDelayMs?: number;
 }
 
 /**
- * The game-over annotation: a badge on each king saying how the game ended.
+ * The label beside each game-over badge.
  *
- * React Native views over the canvas rather than Skia nodes. Text is the
- * reason: drawing it in Skia would mean shipping a font and measuring glyphs
- * for strings the *app* supplies in whatever language it likes. This overlay
- * is not on the per-move path — it appears once, when the game is already
- * over — so nothing about the board's per-move cost changes.
+ * Views rather than canvas nodes, and the only part of the animation that is:
+ * the text is the consumer's, in whatever language they use, and drawing that
+ * in Skia would mean shipping a font and measuring arbitrary glyphs. The
+ * badges themselves are drawn in the canvas.
  */
 export const GameOverBadges: React.FC<GameOverBadgesProps> = ({
   chess,
   config,
   result,
   labels,
+  startDelayMs = 0,
 }) => {
   if (!result) {
     return null;
   }
 
+  const labelFor = (key: GameOverReason | 'winner') =>
+    labels?.[key] ?? DEFAULT_LABELS[key];
+
   const whiteKing = findKingSquare(chess, 'w');
   const blackKing = findKingSquare(chess, 'b');
-  const draw = isDraw(result.reason);
-  const reasonLabel = labels?.[result.reason] ?? result.reason;
-  const winnerLabel = labels?.winner ?? 'Winner';
+  const draw = result.reason === 'draw' || result.reason === 'stalemate';
 
-  const badgeFor = (color: Color, square: Square | null) => {
-    if (!square) {
-      return null;
-    }
+  const pills: PillProps[] = [];
+  const push = (square: Square | null, color: Color) => {
+    if (!square) return;
     if (draw) {
-      return {
+      pills.push({
         square,
-        label: reasonLabel,
-        color: DRAW_COLOR,
-        delayMs: 0,
-      };
+        label: labelFor(result.reason),
+        winner: false,
+        draw: true,
+        config,
+        startDelayMs,
+      });
+      return;
     }
-    // Decisive: the reason sits on the king that lost, the winner badge on
-    // the other — so the board says both what happened and to whom.
-    const lost = result.winner !== color;
-    return {
+    if (!result.winner) return;
+    const won = result.winner === color;
+    pills.push({
       square,
-      label: lost ? reasonLabel : winnerLabel,
-      color: lost ? LOSER_COLOR : WINNER_COLOR,
-      delayMs: lost ? 0 : WINNER_DELAY_MS,
-    };
+      label: won ? labelFor('winner') : labelFor(result.reason),
+      winner: won,
+      draw: false,
+      config,
+      startDelayMs,
+    });
   };
 
-  const badges = [badgeFor('w', whiteKing), badgeFor('b', blackKing)].filter(
-    (badge): badge is NonNullable<typeof badge> => badge !== null
-  );
+  push(whiteKing, 'w');
+  push(blackKing, 'b');
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      {badges.map((badge) => (
-        <Badge key={badge.square} {...badge} config={config} />
+      {pills.map((pill) => (
+        <Pill key={pill.square} {...pill} />
       ))}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  badge: {
+  label: {
+    fontWeight: '700',
+  },
+  pill: {
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 2,
-  },
-  label: {
-    color: ACCENT,
-    fontWeight: '700',
-    textAlign: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 3,
   },
 });

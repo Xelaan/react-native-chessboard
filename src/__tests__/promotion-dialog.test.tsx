@@ -45,6 +45,10 @@ const config = {
     promotionPieceButton: '#button',
     promotionDialogBackground: '#panel',
     promotionOverlay: '#scrim',
+    gameOverWinner: '#81b64c',
+    gameOverLoser: '#fa412d',
+    gameOverDraw: '#8b8987',
+    gameOverAccent: '#ffffff',
   },
   animations: {
     move: MOVE_SPRING,
