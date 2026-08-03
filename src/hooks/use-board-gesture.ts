@@ -231,13 +231,18 @@ export const useBoardGesture = ({
 
         squareState.scale.set(withSpring(1, animations.scale));
 
-        // Check if this is own piece - only own pieces can make moves
+        // Ours to drop? Same rule the pickup used: our colour, and either our
+        // turn or a premove into the opponent's. Requiring `piece[0] === turn`
+        // here meant every premove drag reached this point off-turn, failed,
+        // and snapped back — the premove branch below was unreachable.
         const piece = squareState.piece.get();
         const turn = boardState.turn.get();
-        const isOwnPiece =
-          piece &&
-          piece[0] === turn &&
-          (playerSide === 'both' || piece[0] === playerSide);
+        const isMine =
+          !!piece &&
+          (playerSide === 'both' ? piece[0] === turn : piece[0] === playerSide);
+        const canPremove =
+          premovesEnabled && playerSide !== 'both' && turn !== playerSide;
+        const isOwnPiece = isMine && (canPremove || piece?.[0] === turn);
 
         // If not own piece, just snap back (can't make moves with opponent's pieces)
         if (!isOwnPiece) {

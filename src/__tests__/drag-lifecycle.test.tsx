@@ -127,6 +127,7 @@ const mountGesture = (
   const moveExecutor = {
     tryMove: jest.fn(),
     selectPiece: jest.fn(),
+    queuePremove: jest.fn(),
   } as unknown as MoveExecutor;
 
   let pan: MockPanGesture | undefined;
@@ -495,6 +496,86 @@ describe('drag lifecycle', () => {
       pan.simulateUpdate(event(e2Center.x, e2Center.y - PIECE_SIZE * 2));
 
       expect(boardState.hoverSquare.get()).toBeNull();
+    });
+  });
+
+  describe('premove drops', () => {
+    // Regression: the drop path required `piece[0] === turn`, which is false
+    // by definition while premoving, so every premove drag snapped back and
+    // the premove branch below that check was unreachable. The executor's own
+    // premove tests passed throughout — they never went through a gesture.
+    const premoveConfig = {
+      playerSide: 'w' as const,
+      premovesEnabled: true,
+    };
+
+    const blackToMove = () => {
+      const chess = new Chess();
+      chess.move('e4');
+      chess.move('e5');
+      chess.move('Nf3');
+      return chess;
+    };
+
+    it('queues the move instead of snapping back', () => {
+      const chess = blackToMove();
+      const boardState = createMockBoardState(chess);
+      // The map the drop is judged against, as the executor publishes it.
+      boardState.premoveTargets.set({ d2: ['d4' as Square] });
+      const { pan, moveExecutor } = mountGesture(boardState, premoveConfig);
+      const d2 = 'd2' as Square;
+      const from = squareToPosition(d2, PIECE_SIZE, false);
+      const to = squareToPosition('d4' as Square, PIECE_SIZE, false);
+      const at = (p: { x: number; y: number }) =>
+        event(p.x + PIECE_SIZE / 2, p.y + PIECE_SIZE / 2);
+
+      pan.simulateBegin(at(from));
+      pan.simulateStart(at(from));
+      pan.simulateUpdate(at(to));
+      pan.simulateEnd(at(to));
+
+      expect(moveExecutor.queuePremove).toHaveBeenCalledWith('d2', 'd4');
+      // Not played — it is a promise, not a move.
+      expect(moveExecutor.tryMove).not.toHaveBeenCalled();
+    });
+
+    it('sends the piece home rather than to its target', () => {
+      // The board must keep showing the real position until the premove
+      // fires, so the piece goes back where it came from.
+      const chess = blackToMove();
+      const boardState = createMockBoardState(chess);
+      boardState.premoveTargets.set({ d2: ['d4' as Square] });
+      const { pan } = mountGesture(boardState, premoveConfig);
+      const d2 = 'd2' as Square;
+      const from = squareToPosition(d2, PIECE_SIZE, false);
+      const to = squareToPosition('d4' as Square, PIECE_SIZE, false);
+      const at = (p: { x: number; y: number }) =>
+        event(p.x + PIECE_SIZE / 2, p.y + PIECE_SIZE / 2);
+
+      pan.simulateBegin(at(from));
+      pan.simulateStart(at(from));
+      pan.simulateUpdate(at(to));
+      pan.simulateEnd(at(to));
+
+      expect(boardState.squares[d2].translateY.get()).toBeCloseTo(from.y, 5);
+    });
+
+    it('still refuses a target the flipped position rejects', () => {
+      const chess = blackToMove();
+      const boardState = createMockBoardState(chess);
+      boardState.premoveTargets.set({ d2: ['d4' as Square] });
+      const { pan, moveExecutor } = mountGesture(boardState, premoveConfig);
+      const from = squareToPosition('d2' as Square, PIECE_SIZE, false);
+      const to = squareToPosition('d6' as Square, PIECE_SIZE, false);
+      const at = (p: { x: number; y: number }) =>
+        event(p.x + PIECE_SIZE / 2, p.y + PIECE_SIZE / 2);
+
+      pan.simulateBegin(at(from));
+      pan.simulateStart(at(from));
+      pan.simulateUpdate(at(to));
+      pan.simulateEnd(at(to));
+
+      expect(moveExecutor.queuePremove).not.toHaveBeenCalled();
     });
   });
 });
