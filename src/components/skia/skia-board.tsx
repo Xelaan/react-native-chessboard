@@ -4,13 +4,19 @@ import type { SkImage } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 import { StyleSheet } from 'react-native';
 import type { BoardConfig, BoardState } from '../../state';
-import type { Arrow, EffectParams, SquareMark } from '../../types';
+import type {
+  Arrow,
+  EffectParams,
+  SquareHighlight,
+  SquareMark,
+} from '../../types';
 import { BoardBackground } from './board-background';
 import { SkiaHighlights } from './skia-highlights';
 import { SkiaDots } from './skia-dots';
 import { SkiaPiecesAtlas } from './skia-pieces-atlas';
 import { SkiaMarks } from './skia-marks';
 import { SkiaArrows } from './skia-arrows';
+import { SkiaSquareHighlights } from './skia-square-highlights';
 
 const styles = StyleSheet.create({
   canvas: {
@@ -26,6 +32,7 @@ interface SkiaBoardProps {
   effectParams?: EffectParams;
   marks?: SquareMark[];
   arrows?: Arrow[];
+  highlightedSquares?: SquareHighlight[];
 }
 
 /**
@@ -54,6 +61,7 @@ const areVisualPropsEqual = (
     // the marks actually changed — otherwise every parent render repaints.
     previous.marks === next.marks &&
     previous.arrows === next.arrows &&
+    previous.highlightedSquares === next.highlightedSquares &&
     previousConfig.boardSize === nextConfig.boardSize &&
     previousConfig.pieceSize === nextConfig.pieceSize &&
     previousConfig.flipped === nextConfig.flipped &&
@@ -78,6 +86,7 @@ export const SkiaBoard: React.FC<SkiaBoardProps> = React.memo(
     effectParams,
     marks,
     arrows,
+    highlightedSquares,
   }) => {
     const { boardSize, pieceSize } = config;
 
@@ -99,6 +108,9 @@ export const SkiaBoard: React.FC<SkiaBoardProps> = React.memo(
       <>
         <BoardBackground config={config} />
         <SkiaHighlights config={config} boardState={boardState} />
+        {/* Caller-declared, so drawn over the board's own highlights: an app
+            asking for a ring means it on top of a last-move tint. */}
+        <SkiaSquareHighlights config={config} highlights={highlightedSquares} />
         <SkiaPiecesAtlas
           layer="resting"
           spriteImage={spriteImage}

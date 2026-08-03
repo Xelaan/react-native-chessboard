@@ -56,6 +56,17 @@ interface GameResult {
  */
 type GameOverLabels = Partial<Record<GameOverReason | 'winner', string>>;
 
+/**
+ * A caller-declared square highlight: `fill` tints the square, `ring` outlines
+ * it (better when a piece is standing there and a tint would fight the art).
+ */
+interface SquareHighlight {
+  square: Square;
+  type?: 'ring' | 'fill';
+  /** Defaults to an amber the board picks. */
+  color?: string;
+}
+
 /** Glyph shown inside a {@link SquareMark} badge. */
 type SquareMarkIcon = 'cross' | 'check';
 
@@ -99,6 +110,7 @@ export type {
   PieceSymbol,
   EffectParams,
   EffectTrigger,
+  SquareHighlight,
   SquareMark,
   SquareMarkIcon,
   Arrow,

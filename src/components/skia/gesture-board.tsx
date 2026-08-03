@@ -26,6 +26,7 @@ import {
 import { createMoveExecutor, MoveResult } from '../../state/move-executor';
 import type {
   Arrow,
+  SquareHighlight,
   GameOverLabels,
   GameResult,
   SquareMark,
@@ -63,6 +64,7 @@ export interface GestureBoardProps {
   renderEffect?: (params: EffectParams) => React.ReactNode;
   marks?: SquareMark[];
   arrows?: Arrow[];
+  highlightedSquares?: SquareHighlight[];
   gameResult?: GameResult | null;
   gameOverLabels?: GameOverLabels;
   spriteSource?: ImageSourcePropType;
@@ -76,6 +78,7 @@ export const GestureBoard = forwardRef<ChessboardRef, GestureBoardProps>(
       renderEffect,
       marks,
       arrows,
+      highlightedSquares,
       gameResult,
       gameOverLabels,
       spriteSource,
@@ -280,6 +283,7 @@ export const GestureBoard = forwardRef<ChessboardRef, GestureBoardProps>(
             <SkiaBoard
               marks={marks}
               arrows={arrows}
+              highlightedSquares={highlightedSquares}
               config={config}
               boardState={boardState}
               spriteImage={spriteImage}

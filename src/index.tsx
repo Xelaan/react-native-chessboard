@@ -9,6 +9,7 @@ import type { ChessboardRef } from './hooks';
 import type { ChessboardState } from './helpers/get-chessboard-state';
 import type {
   Arrow,
+  SquareHighlight,
   EffectParams,
   GameOverLabels,
   GameResult,
@@ -27,6 +28,8 @@ export interface ChessboardProps
   marks?: SquareMark[];
   /** Static annotation arrows (coach lines, hints). */
   arrows?: Arrow[];
+  /** Squares to ring or tint — hints, targets, app annotations. */
+  highlightedSquares?: SquareHighlight[];
   /** Terminal state; badges both kings with how the game ended. */
   gameResult?: GameResult | null;
   /** Localized badge text for `gameResult`. */
@@ -62,6 +65,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
       renderEffect,
       marks,
       arrows,
+      highlightedSquares,
       gameResult,
       gameOverLabels,
       spriteSource,
@@ -91,6 +95,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
           renderEffect={renderEffect}
           marks={marks}
           arrows={arrows}
+          highlightedSquares={highlightedSquares}
           gameResult={gameResult}
           gameOverLabels={gameOverLabels}
           spriteSource={spriteSource}
@@ -108,6 +113,7 @@ export { preloadPieceSpriteSheet } from './assets/piece-images';
 export type { ChessboardRef, ChessboardState, MoveResult, Move };
 export type {
   Arrow,
+  SquareHighlight,
   EffectParams,
   GameResult,
   GameOverReason,

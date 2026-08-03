@@ -30,6 +30,7 @@ const host = (name: string) => {
 export const Canvas = host('skia-canvas');
 export const Group = host('skia-group');
 export const Rect = host('skia-rect');
+export const RoundedRect = host('skia-rrect');
 export const Circle = host('skia-circle');
 export const Image = host('skia-image');
 export const Atlas = host('skia-atlas');
@@ -65,6 +66,13 @@ export const useImage = jest.fn(() => null);
 export const useFont = jest.fn(() => fakeSkFont);
 export const useTypeface = jest.fn(() => ({ __mock: 'SkTypeface' }));
 export const matchFont = jest.fn(() => fakeSkFont);
+
+/** Mirrors Skia's `rrect(rect, rx, ry)`; tests read `.rect` back off it. */
+export const rrect = (
+  r: { x: number; y: number; width: number; height: number },
+  rx: number,
+  ry: number
+) => ({ rect: r, rx, ry });
 
 export const rect = (x: number, y: number, width: number, height: number) => ({
   x,
@@ -164,6 +172,8 @@ export default {
   Canvas,
   Group,
   Rect,
+  RoundedRect,
+  rrect,
   Circle,
   Image,
   Atlas,
