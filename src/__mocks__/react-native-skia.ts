@@ -73,6 +73,18 @@ export const rect = (x: number, y: number, width: number, height: number) => ({
   height,
 });
 
+/**
+ * A decoded sheet. `width`/`height` are real methods because the atlas reads
+ * the sheet's dimensions to work out its cell size — a plain object stub made
+ * every piece render at the wrong scale.
+ */
+export const makeSkImage = (uri?: string, width = 768, height = 256) => ({
+  __mock: 'SkImage' as const,
+  uri,
+  width: () => width,
+  height: () => height,
+});
+
 export const Skia = {
   RSXform: (scos: number, ssin: number, tx: number, ty: number) => ({
     scos,
@@ -86,10 +98,9 @@ export const Skia = {
     fromURI: jest.fn(async (uri: string) => ({ __mock: 'SkData', uri })),
   },
   Image: {
-    MakeImageFromEncoded: jest.fn((data: { uri?: string }) => ({
-      __mock: 'SkImage',
-      uri: data?.uri,
-    })),
+    MakeImageFromEncoded: jest.fn((data: { uri?: string }) =>
+      makeSkImage(data?.uri)
+    ),
   },
   RuntimeEffect: {
     Make: () => null,

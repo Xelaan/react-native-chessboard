@@ -2,6 +2,7 @@ import React from 'react';
 import { Chess, Square } from 'chess.js';
 import { makeMutable } from 'react-native-reanimated';
 import { Group } from '@shopify/react-native-skia';
+import { makeSkImage } from '../__mocks__/react-native-skia';
 import { SkiaDots, dotProgress } from '../components/skia/skia-dots';
 import { SkiaBoard } from '../components/skia/skia-board';
 import { SkiaPiecesAtlas } from '../components/skia/skia-pieces-atlas';
@@ -292,7 +293,7 @@ describe('SkiaDots', () => {
 });
 
 describe('piece layering', () => {
-  const spriteImage = { __mock: 'SkImage' } as never;
+  const spriteImage = makeSkImage() as never;
 
   const atlasSpriteCount = (tree: RenderedJSON, index: number): number => {
     const atlases = findAllByType(tree, 'skia-atlas');

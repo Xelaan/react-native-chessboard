@@ -10,49 +10,29 @@ import type { Square } from 'chess.js';
 import { SQUARES, BoardState, PieceCode } from '../../state/types';
 
 // Sprite sheet layout: 6x2 grid (p, n, b, r, q, k for each color)
-// Row 0: white pieces, Row 1: black pieces
-const SPRITE_CELL_SIZE = 128;
+// Row 0: white pieces, Row 1: black pieces.
+//
+// The cell size is read from the sheet (width / 6) rather than assumed, so a
+// consumer can ship art at whatever resolution their pieces were drawn at —
+// forcing everyone through 128px meant either upscaling on a 3x screen or
+// throwing away detail that was already there.
+const FALLBACK_CELL_SIZE = 128;
+const COLUMNS = 6;
 
-// Pre-computed sprite rects for all piece types
-const SPRITE_RECTS: Record<NonNullable<PieceCode>, SkRect> = {
-  wp: rect(0, 0, SPRITE_CELL_SIZE, SPRITE_CELL_SIZE),
-  wn: rect(SPRITE_CELL_SIZE, 0, SPRITE_CELL_SIZE, SPRITE_CELL_SIZE),
-  wb: rect(SPRITE_CELL_SIZE * 2, 0, SPRITE_CELL_SIZE, SPRITE_CELL_SIZE),
-  wr: rect(SPRITE_CELL_SIZE * 3, 0, SPRITE_CELL_SIZE, SPRITE_CELL_SIZE),
-  wq: rect(SPRITE_CELL_SIZE * 4, 0, SPRITE_CELL_SIZE, SPRITE_CELL_SIZE),
-  wk: rect(SPRITE_CELL_SIZE * 5, 0, SPRITE_CELL_SIZE, SPRITE_CELL_SIZE),
-  bp: rect(0, SPRITE_CELL_SIZE, SPRITE_CELL_SIZE, SPRITE_CELL_SIZE),
-  bn: rect(
-    SPRITE_CELL_SIZE,
-    SPRITE_CELL_SIZE,
-    SPRITE_CELL_SIZE,
-    SPRITE_CELL_SIZE
-  ),
-  bb: rect(
-    SPRITE_CELL_SIZE * 2,
-    SPRITE_CELL_SIZE,
-    SPRITE_CELL_SIZE,
-    SPRITE_CELL_SIZE
-  ),
-  br: rect(
-    SPRITE_CELL_SIZE * 3,
-    SPRITE_CELL_SIZE,
-    SPRITE_CELL_SIZE,
-    SPRITE_CELL_SIZE
-  ),
-  bq: rect(
-    SPRITE_CELL_SIZE * 4,
-    SPRITE_CELL_SIZE,
-    SPRITE_CELL_SIZE,
-    SPRITE_CELL_SIZE
-  ),
-  bk: rect(
-    SPRITE_CELL_SIZE * 5,
-    SPRITE_CELL_SIZE,
-    SPRITE_CELL_SIZE,
-    SPRITE_CELL_SIZE
-  ),
-};
+const spriteRects = (cell: number): Record<NonNullable<PieceCode>, SkRect> => ({
+  wp: rect(0, 0, cell, cell),
+  wn: rect(cell, 0, cell, cell),
+  wb: rect(cell * 2, 0, cell, cell),
+  wr: rect(cell * 3, 0, cell, cell),
+  wq: rect(cell * 4, 0, cell, cell),
+  wk: rect(cell * 5, 0, cell, cell),
+  bp: rect(0, cell, cell, cell),
+  bn: rect(cell, cell, cell, cell),
+  bb: rect(cell * 2, cell, cell, cell),
+  br: rect(cell * 3, cell, cell, cell),
+  bq: rect(cell * 4, cell, cell, cell),
+  bk: rect(cell * 5, cell, cell, cell),
+});
 
 /**
  * Which pieces this atlas draws.
@@ -82,8 +62,14 @@ interface SkiaPiecesAtlasProps {
  */
 export const SkiaPiecesAtlas: React.FC<SkiaPiecesAtlasProps> = React.memo(
   ({ spriteImage, boardState, pieceSize, layer }) => {
+    // Cell size comes from the sheet itself; fall back only while it is still
+    // decoding, when nothing is drawn anyway.
+    const cellSize = spriteImage
+      ? spriteImage.width() / COLUMNS
+      : FALLBACK_CELL_SIZE;
+    const rects = spriteRects(cellSize);
     // Scale factor from sprite sheet cell size to piece size
-    const scale = pieceSize / SPRITE_CELL_SIZE;
+    const scale = pieceSize / cellSize;
 
     // When the sheet decodes asynchronously the pieces would otherwise hard-pop
     // onto an already-visible checkerboard — fade them in instead. A cached
@@ -126,7 +112,7 @@ export const SkiaPiecesAtlas: React.FC<SkiaPiecesAtlasProps> = React.memo(
       pieces.sort((a, b) => a.zIndex - b.zIndex);
 
       for (const { square, piece } of pieces) {
-        sprites.push(SPRITE_RECTS[piece]);
+        sprites.push(rects[piece]);
 
         const squareState = boardState.squares[square];
         const x = squareState.translateX.get();
@@ -137,7 +123,7 @@ export const SkiaPiecesAtlas: React.FC<SkiaPiecesAtlasProps> = React.memo(
         // the square's centre.
         const centerX = x + pieceSize / 2;
         const centerY = y + pieceSize / 2;
-        const scaledHalf = (SPRITE_CELL_SIZE / 2) * pieceScale;
+        const scaledHalf = (cellSize / 2) * pieceScale;
         transforms.push(
           Skia.RSXform(
             pieceScale,

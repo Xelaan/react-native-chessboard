@@ -3,6 +3,7 @@ import { act, create } from 'react-test-renderer';
 import type { ReactTestRenderer } from 'react-test-renderer';
 import { Chess, Square } from 'chess.js';
 import { useFont } from '@shopify/react-native-skia';
+import { makeSkImage } from '../__mocks__/react-native-skia';
 import { makeMutable } from 'react-native-reanimated';
 import { BoardBackground } from '../components/skia/board-background';
 import { SkiaBoard } from '../components/skia/skia-board';
@@ -21,7 +22,7 @@ import {
   SCALE_SPRING,
   SNAP_BACK_SPRING,
 } from '../config/animations';
-import { findAllByType } from './render-utils';
+import { findAllByType, renderToTree } from './render-utils';
 import type { RenderedJSON } from './render-utils';
 
 (
@@ -236,7 +237,7 @@ describe('SkiaBoard memoization', () => {
   it('re-renders when the sprite sheet arrives', () => {
     const boardState = makeBoardState();
     const config = makeConfig();
-    const sprite = { __mock: 'SkImage' } as never;
+    const sprite = makeSkImage() as never;
 
     // The config is untouched here, so the background legitimately stays
     // bailed out — assert on the atlas the sprite is actually handed to.
@@ -267,5 +268,32 @@ describe('SkiaBoard memoization', () => {
     });
 
     expect(atlasImage()).toBe(sprite);
+  });
+
+  it('scales pieces to the sheet it was given, not a fixed cell size', () => {
+    // A 1440x480 sheet is 240px cells; a 768x256 one is 128. Both must draw
+    // pieces at the same on-board size — the sheet's resolution is the
+    // consumer's choice, not a contract.
+    const transformsFor = (sheetWidth: number) => {
+      const tree = renderToTree(
+        <SkiaBoard
+          config={makeConfig()}
+          boardState={makeBoardState()}
+          spriteImage={
+            makeSkImage(undefined, sheetWidth, sheetWidth / 3) as never
+          }
+        />
+      );
+      const atlas = findAllByType(tree, 'skia-atlas')[0];
+      return (atlas.props as { transforms: { value: { scos: number }[] } })
+        .transforms.value;
+    };
+
+    const small = transformsFor(768);
+    const large = transformsFor(1440);
+
+    // Same on-board size means the larger sheet is drawn at a smaller scale,
+    // in exactly the ratio of their cell sizes.
+    expect(small[0].scos / large[0].scos).toBeCloseTo(1440 / 768, 5);
   });
 });

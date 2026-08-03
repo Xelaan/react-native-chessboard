@@ -1,5 +1,6 @@
 import React from 'react';
 import { Group, useFont, useImage } from '@shopify/react-native-skia';
+import { makeSkImage } from '../__mocks__/react-native-skia';
 import { BoardBackground } from '../components/skia/board-background';
 import {
   MOVE_SPRING,
@@ -143,7 +144,7 @@ describe('BoardBackground labels', () => {
     });
 
     it('covers the board with the texture, under the squares', () => {
-      (useImage as jest.Mock).mockReturnValue({ __mock: 'SkImage' });
+      (useImage as jest.Mock).mockReturnValue(makeSkImage());
       const config = baseConfig({ backgroundImage: 1 as never });
 
       const tree = renderToTree(
