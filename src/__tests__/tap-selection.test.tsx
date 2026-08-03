@@ -3,7 +3,10 @@ import { act, create } from 'react-test-renderer';
 import { Chess } from 'chess.js';
 import type { Square } from 'chess.js';
 import { makeMutable } from 'react-native-reanimated';
-import type { MockTapGesture } from '../__mocks__/react-native-gesture-handler';
+import type {
+  MockPanGesture,
+  MockTapGesture,
+} from '../__mocks__/react-native-gesture-handler';
 
 import { useBoardGesture } from '../hooks/use-board-gesture';
 import { squareToPosition } from '../state/use-board-state';
@@ -111,27 +114,29 @@ const centre = (square: Square) => {
   };
 };
 
-const mount = (boardState: BoardState) => {
+const mountAll = (boardState: BoardState) => {
   const moveExecutor = {
     tryMove: jest.fn(),
     selectPiece: jest.fn(),
   } as unknown as MoveExecutor;
   let tap: MockTapGesture | undefined;
+  let pan: MockPanGesture | undefined;
   const Probe = () => {
     const gesture = useBoardGesture({
       boardState,
       config,
       moveExecutor,
       gestureEnabled: true,
-    }) as unknown as { gestures: [MockTapGesture, unknown] };
-    tap = gesture.gestures[0];
+    }) as unknown as { gestures: [MockTapGesture, MockPanGesture] };
+    tap = gesture.gestures[0] as MockTapGesture;
+    pan = gesture.gestures[1] as unknown as MockPanGesture;
     return null;
   };
   act(() => {
     create(<Probe />);
   });
-  if (!tap) throw new Error('tap gesture was not captured');
-  return { tap, moveExecutor };
+  if (!tap || !pan) throw new Error('gestures were not captured');
+  return { tap, pan, moveExecutor };
 };
 
 describe('tap selection', () => {
@@ -141,30 +146,31 @@ describe('tap selection', () => {
 
   it('grows the tapped piece so it reads as picked up', () => {
     const boardState = makeBoardState(new Chess());
-    const { tap } = mount(boardState);
+    const { tap } = mountAll(boardState);
 
     tap.simulateTap(centre(E2));
 
     expect(boardState.squares[E2].scale.get()).toBe(config.tapScale);
-    // Raised above resting pieces so growing doesn't clip it.
-    expect(boardState.squares[E2].zIndex.get()).toBe(50);
+    // zIndex is deliberately untouched: a touch can land while a move
+    // animation still owns this square, and writing it would clobber that
+    // animation's rollback.
+    expect(boardState.squares[E2].zIndex.get()).toBe(0);
   });
 
   it('settles the piece again when it is deselected', () => {
     const boardState = makeBoardState(new Chess());
-    const { tap } = mount(boardState);
+    const { tap } = mountAll(boardState);
 
     tap.simulateTap(centre(E2));
     boardState.selectedSquare.set(E2);
     tap.simulateTap(centre(E2));
 
     expect(boardState.squares[E2].scale.get()).toBe(1);
-    expect(boardState.squares[E2].zIndex.get()).toBe(0);
   });
 
   it('settles the previous piece when the selection moves', () => {
     const boardState = makeBoardState(new Chess());
-    const { tap } = mount(boardState);
+    const { tap } = mountAll(boardState);
 
     tap.simulateTap(centre(E2));
     boardState.selectedSquare.set(E2);
@@ -178,7 +184,7 @@ describe('tap selection', () => {
     // The move animation starts from wherever the sprite is; a grown piece
     // would shrink mid-flight.
     const boardState = makeBoardState(new Chess());
-    const { tap, moveExecutor } = mount(boardState);
+    const { tap, moveExecutor } = mountAll(boardState);
 
     tap.simulateTap(centre(E2));
     boardState.selectedSquare.set(E2);
@@ -191,11 +197,50 @@ describe('tap selection', () => {
 
   it("does not grow a piece that is not this player's to move", () => {
     const boardState = makeBoardState(new Chess());
-    const { tap } = mount(boardState);
+    const { tap } = mountAll(boardState);
     const e7 = 'e7' as Square;
 
     tap.simulateTap(centre(e7));
 
     expect(boardState.squares[e7].scale.get()).toBe(1);
+  });
+
+  it('shows the selection the moment the finger lands', () => {
+    // Dots on touch-down, not on release: waiting for the finger to lift
+    // means the player has already decided before the board answers.
+    const boardState = makeBoardState(new Chess());
+    const { pan, moveExecutor } = mountAll(boardState);
+
+    pan.simulateBegin(centre(E2));
+
+    expect(moveExecutor.selectPiece).toHaveBeenCalledWith(E2);
+    expect(boardState.squares[E2].scale.get()).toBe(config.tapScale);
+  });
+
+  it('keeps the selection when that same touch lifts', () => {
+    // The touch that selects also releases on the same square; treating that
+    // release as "tapped an already-selected piece" would deselect instantly.
+    const boardState = makeBoardState(new Chess());
+    const { pan, tap } = mountAll(boardState);
+
+    pan.simulateBegin(centre(E2));
+    boardState.selectedSquare.set(E2);
+    tap.simulateTap(centre(E2));
+
+    expect(boardState.selectedSquare.get()).toBe(E2);
+  });
+
+  it('deselects when the piece is tapped again by a later touch', () => {
+    const boardState = makeBoardState(new Chess());
+    const { pan, tap } = mountAll(boardState);
+
+    pan.simulateBegin(centre(E2));
+    boardState.selectedSquare.set(E2);
+    tap.simulateTap(centre(E2));
+    // A fresh touch: finalize clears the "this touch selected it" flag.
+    pan.simulateFinalize(centre(E2));
+    tap.simulateTap(centre(E2));
+
+    expect(boardState.selectedSquare.get()).toBeNull();
   });
 });

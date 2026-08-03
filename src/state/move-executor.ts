@@ -454,6 +454,23 @@ export const createMoveExecutor = (
       chess.reset();
     }
 
+    return repaint(opts);
+  };
+
+  /**
+   * Redraws every square from the position chess.js currently holds, without
+   * touching that position.
+   *
+   * Split out of `resetBoard` because `chess.load()` discards the move
+   * history: routing undo/redo through a full reset wiped the very history
+   * they walk, so each worked exactly once and then silently did nothing.
+   * Anything that has already moved the game itself — undo, redo — repaints
+   * instead of resetting.
+   */
+  const repaint = (opts?: {
+    slide?: { from: Square; to: Square };
+    lastMove?: { from: Square; to: Square } | null;
+  }): Promise<void> => {
     const slide = opts?.slide;
     const lastMove = opts?.lastMove ?? null;
     const board = chess.board();
@@ -573,14 +590,20 @@ export const createMoveExecutor = (
 
     undone.push(move);
 
-    // Reset the board, restoring the last-move highlight to the move that now
-    // sits at the end of the history (rather than clearing it).
+    // Repaint rather than reset: `resetBoard` reloads the FEN, and a reload
+    // throws away the history undo is walking.
+    //
+    // The slide runs backwards — the piece now sitting on `from` comes in
+    // from `to` — so stepping back looks like the move being taken back
+    // rather than the board flickering into a new position.
     const history = chess.history({ verbose: true });
     const prev = history[history.length - 1];
-    resetBoard(
-      chess.fen(),
-      prev ? { lastMove: { from: prev.from, to: prev.to } } : undefined
-    );
+    // Fire-and-forget: the caller gets the move back synchronously, and the
+    // slide settles on its own.
+    repaint({
+      slide: { from: move.to, to: move.from },
+      ...(prev ? { lastMove: { from: prev.from, to: prev.to } } : {}),
+    });
 
     return move;
   };
@@ -597,11 +620,18 @@ export const createMoveExecutor = (
     const move = undone.pop();
     if (!move) return null;
 
-    const applied = chess.move({
-      from: move.from,
-      to: move.to,
-      promotion: move.promotion,
-    });
+    let applied: Move | null = null;
+    try {
+      applied = chess.move({
+        from: move.from,
+        to: move.to,
+        promotion: move.promotion,
+      });
+    } catch {
+      // chess.js throws rather than returning null for a move the position
+      // rejects. Either way the stack no longer describes this game.
+      applied = null;
+    }
     if (!applied) {
       // The position no longer accepts it (the stack should have been cleared);
       // drop the rest rather than leaving a stack that can't be trusted.
@@ -609,7 +639,7 @@ export const createMoveExecutor = (
       return null;
     }
 
-    resetBoard(chess.fen(), {
+    repaint({
       slide: { from: applied.from, to: applied.to },
       lastMove: { from: applied.from, to: applied.to },
     });

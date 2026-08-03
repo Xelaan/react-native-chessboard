@@ -49,6 +49,10 @@ export const useBoardGesture = ({
   // Offset between touch point and piece position (to follow finger exactly)
   const touchOffsetX = useSharedValue(0);
   const touchOffsetY = useSharedValue(0);
+  // Whether the current touch is the one that selected the piece. Without it,
+  // selecting on touch-down means the same touch's release reads as "tapped
+  // the already-selected piece" and immediately deselects it.
+  const selectedOnThisTouch = useSharedValue(false);
 
   // Stable callback for tryMove
   const handleTryMove = useCallback(
@@ -82,6 +86,38 @@ export const useBoardGesture = ({
   );
 
   const gesture = useMemo(() => {
+    // Lift the tapped piece the way a drag does, and drop the previous one
+    // back. Tap-to-move otherwise gave no feedback that a piece was picked
+    // up at all — the dots appeared, but nothing said which piece they
+    // belonged to.
+    const selectPiece = (square: Square) => {
+      'worklet';
+      const previous = boardState.selectedSquare.get();
+      if (previous && previous !== square) {
+        boardState.squares[previous].scale.set(withSpring(1, animations.scale));
+        boardState.squares[previous].zIndex.set(0);
+      }
+      boardState.squares[square].scale.set(
+        withSpring(tapScale, animations.scale)
+      );
+      // Deliberately NOT raising zIndex. Selection happens on touch-down, and
+      // a touch can land while a move animation still owns this square's
+      // zIndex — writing it here would clobber that animation's rollback. The
+      // grow is small enough that clipping against a neighbour doesn't show;
+      // a drag raises to 100 in `onStart`, where it owns the square outright.
+    };
+
+    const clearSelection = () => {
+      'worklet';
+      const previous = boardState.selectedSquare.get();
+      if (previous) {
+        boardState.squares[previous].scale.set(withSpring(1, animations.scale));
+        boardState.squares[previous].zIndex.set(0);
+      }
+      boardState.selectedSquare.set(null);
+      boardState.validMoves.set([]);
+    };
+
     const panGesture = Gesture.Pan()
       .enabled(gestureEnabled)
       .minDistance(5) // Require some movement before starting drag
@@ -113,6 +149,13 @@ export const useBoardGesture = ({
         const controllable = mine && (premoving || piece?.[0] === turn);
 
         if (controllable) {
+          // Show the move dots the instant the finger lands, rather than
+          // waiting for a release or for the drag to clear its threshold —
+          // by then the player has already committed to a move.
+          selectPiece(square);
+          selectedOnThisTouch.set(true);
+          scheduleOnRN(handleSelectPiece, square);
+
           // Store drag start info (but don't start drag yet)
           draggedSquare.set(square);
           dragStartX.set(squareState.translateX.get());
@@ -131,8 +174,6 @@ export const useBoardGesture = ({
         if (!square) return;
 
         const squareState = boardState.squares[square];
-        const piece = squareState.piece.get();
-        const turn = boardState.turn.get();
 
         dragStarted.set(true);
 
@@ -140,17 +181,8 @@ export const useBoardGesture = ({
         squareState.zIndex.set(100);
         squareState.scale.set(withSpring(dragScale, animations.scale));
 
-        // Own piece, and ours to move. With premoves on it is also "ours" off
-        // turn — that is the whole point of queueing one.
-        const isMine =
-          playerSide === 'both'
-            ? piece?.[0] === turn
-            : piece?.[0] === playerSide;
-        const isOwnPiece =
-          piece && isMine && (premovesEnabled || piece[0] === turn);
-        if (isOwnPiece) {
-          scheduleOnRN(handleSelectPiece, square);
-        }
+        // Selection (and its dots) already happened on touch-down; the drag
+        // only takes over the piece's presentation.
       })
       .onUpdate((event) => {
         'worklet';
@@ -312,6 +344,7 @@ export const useBoardGesture = ({
         // back. Clearing this per-branch left the ring stranded on whichever
         // path forgot it.
         boardState.hoverSquare.set(null);
+        selectedOnThisTouch.set(false);
         const square = draggedSquare.get();
         if (square) {
           const squareState = boardState.squares[square];
@@ -326,36 +359,6 @@ export const useBoardGesture = ({
         dragStarted.set(false);
         draggedSquare.set(null);
       });
-
-    // Lift the tapped piece the way a drag does, and drop the previous one
-    // back. Tap-to-move otherwise gave no feedback that a piece was picked
-    // up at all — the dots appeared, but nothing said which piece they
-    // belonged to.
-    const selectPiece = (square: Square) => {
-      'worklet';
-      const previous = boardState.selectedSquare.get();
-      if (previous && previous !== square) {
-        boardState.squares[previous].scale.set(withSpring(1, animations.scale));
-        boardState.squares[previous].zIndex.set(0);
-      }
-      boardState.squares[square].scale.set(
-        withSpring(tapScale, animations.scale)
-      );
-      // Above resting pieces so a grown piece isn't clipped by its
-      // neighbours, but below a dragged one.
-      boardState.squares[square].zIndex.set(50);
-    };
-
-    const clearSelection = () => {
-      'worklet';
-      const previous = boardState.selectedSquare.get();
-      if (previous) {
-        boardState.squares[previous].scale.set(withSpring(1, animations.scale));
-        boardState.squares[previous].zIndex.set(0);
-      }
-      boardState.selectedSquare.set(null);
-      boardState.validMoves.set([]);
-    };
 
     // Add tap gesture for selecting pieces
     const tapGesture = Gesture.Tap()
@@ -381,9 +384,13 @@ export const useBoardGesture = ({
           return;
         }
 
-        // Case 2: Tapped on same piece - deselect
+        // Case 2: Tapped the selected piece. A release that belongs to the
+        // touch which just selected it keeps the selection — only a fresh tap
+        // on an already-selected piece toggles it off.
         if (square === selectedSquare) {
-          clearSelection();
+          if (!selectedOnThisTouch.get()) {
+            clearSelection();
+          }
           return;
         }
 
@@ -429,6 +436,7 @@ export const useBoardGesture = ({
     premovesEnabled,
     dragScale,
     tapScale,
+    selectedOnThisTouch,
     dragHoverEnabled,
     liftPx,
     handleQueuePremove,

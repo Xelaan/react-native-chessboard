@@ -10,6 +10,7 @@ import type {
 } from '../state/types';
 import { SQUARES } from '../state/types';
 import { collectLegalTargets } from '../helpers/collect-legal-targets';
+import { squareToPosition } from '../state/use-board-state';
 import {
   MOVE_SPRING,
   SCALE_SPRING,
@@ -806,7 +807,7 @@ describe('createMoveExecutor', () => {
         executor.executeMove(from, to);
       }
       onMove.mockClear();
-      return { chess, executor, onMove };
+      return { chess, boardState, executor, onMove };
     };
 
     const E2E4: [Square, Square] = ['e2' as Square, 'e4' as Square];
@@ -891,6 +892,45 @@ describe('createMoveExecutor', () => {
 
       expect(executor.undo()).toBeNull();
       expect(executor.redo()).toBeNull();
+    });
+
+    it('survives being walked back and forward repeatedly', () => {
+      // Regression: undo/redo used to repaint via `resetBoard`, which reloads
+      // the FEN — and a reload discards the move history they walk. Each
+      // worked exactly once and then silently did nothing, while the position
+      // still looked right.
+      const { chess, executor } = setup([E2E4, E7E5]);
+      chess.move('Nf3');
+      const full = chess.fen();
+
+      for (let cycle = 0; cycle < 4; cycle += 1) {
+        expect(executor.undo()).not.toBeNull();
+        expect(executor.undo()).not.toBeNull();
+        expect(executor.undo()).not.toBeNull();
+        expect(chess.history()).toEqual([]);
+        expect(executor.canUndo()).toBe(false);
+
+        expect(executor.redo()).not.toBeNull();
+        expect(executor.redo()).not.toBeNull();
+        expect(executor.redo()).not.toBeNull();
+        expect(chess.history()).toEqual(['e4', 'e5', 'Nf3']);
+        expect(chess.fen()).toBe(full);
+      }
+    });
+
+    it('animates the piece back to where it came from on undo', () => {
+      const { boardState, executor } = setup([E2E4]);
+      const e2 = squareToPosition('e2' as Square, PIECE_SIZE, false);
+      const e4 = squareToPosition('e4' as Square, PIECE_SIZE, false);
+
+      executor.undo();
+
+      // The pawn ends on e2 but starts the animation from e4 — the move being
+      // taken back, rather than the board flickering into a new position.
+      // (The mocked spring settles instantly, so the end state is what shows.)
+      expect(boardState.squares.e2.translateX.get()).toBeCloseTo(e2.x, 5);
+      expect(boardState.squares.e2.translateY.get()).toBeCloseTo(e2.y, 5);
+      expect(e4.y).not.toBeCloseTo(e2.y, 5);
     });
   });
 });
