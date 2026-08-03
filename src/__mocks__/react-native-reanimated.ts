@@ -81,7 +81,23 @@ export const useAnimatedReaction = <T>(
   react(prepare(), null);
 };
 
+/**
+ * Returns the style object the caller built. Enough for assertions about what
+ * a component renders; the animation itself is out of scope here — the mocked
+ * timings settle instantly anyway.
+ */
+export const useAnimatedStyle = <T>(factory: () => T): T => factory();
+
+// Animated views render as plain hosts, so a tree can be searched for them by
+// name like any other RN element.
+export const Animated = {
+  View: 'Animated.View',
+  Text: 'Animated.Text',
+};
+
 export default {
+  ...Animated,
+  useAnimatedStyle,
   useAnimatedReaction,
   useSharedValue,
   makeMutable,

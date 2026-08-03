@@ -24,7 +24,13 @@ import {
   useBoardStateValues,
 } from '../../state';
 import { createMoveExecutor, MoveResult } from '../../state/move-executor';
-import type { Arrow, SquareMark } from '../../types';
+import type {
+  Arrow,
+  GameOverLabels,
+  GameResult,
+  SquareMark,
+} from '../../types';
+import { GameOverBadges } from '../game-over-badges';
 import { squareToPosition } from '../../state/use-board-state';
 import { useBoardGesture } from '../../hooks/use-board-gesture';
 import {
@@ -57,12 +63,23 @@ export interface GestureBoardProps {
   renderEffect?: (params: EffectParams) => React.ReactNode;
   marks?: SquareMark[];
   arrows?: Arrow[];
+  gameResult?: GameResult | null;
+  gameOverLabels?: GameOverLabels;
   spriteSource?: ImageSourcePropType;
 }
 
 export const GestureBoard = forwardRef<ChessboardRef, GestureBoardProps>(
   (
-    { onMove, onIllegalMove, renderEffect, marks, arrows, spriteSource },
+    {
+      onMove,
+      onIllegalMove,
+      renderEffect,
+      marks,
+      arrows,
+      gameResult,
+      gameOverLabels,
+      spriteSource,
+    },
     ref
   ) => {
     const { chess } = useBoardContext();
@@ -271,6 +288,12 @@ export const GestureBoard = forwardRef<ChessboardRef, GestureBoardProps>(
             />
           </View>
         </GestureDetector>
+        <GameOverBadges
+          chess={chess}
+          config={config}
+          result={gameResult}
+          labels={gameOverLabels}
+        />
         {showPromotion && promotionInfoRef.current && (
           <PromotionDialog
             color={promotionInfoRef.current.color}

@@ -31,6 +31,31 @@ interface Arrow {
   width?: number;
 }
 
+/** How a finished game ended. */
+type GameOverReason =
+  | 'checkmate'
+  | 'stalemate'
+  | 'draw'
+  | 'resign'
+  | 'timeout'
+  | 'abandon';
+
+/**
+ * A finished game. Decisive reasons badge the losing king with the reason and
+ * the other with a winner badge, so they need `winner`; draws badge both and
+ * ignore it.
+ */
+interface GameResult {
+  reason: GameOverReason;
+  winner?: Color | null;
+}
+
+/**
+ * Localized badge text. The library ships no copy of its own — an app that
+ * says nothing here gets the raw reason.
+ */
+type GameOverLabels = Partial<Record<GameOverReason | 'winner', string>>;
+
 /** Glyph shown inside a {@link SquareMark} badge. */
 type SquareMarkIcon = 'cross' | 'check';
 
@@ -77,4 +102,7 @@ export type {
   SquareMark,
   SquareMarkIcon,
   Arrow,
+  GameResult,
+  GameOverReason,
+  GameOverLabels,
 };

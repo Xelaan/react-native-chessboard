@@ -7,7 +7,13 @@ import { GestureBoard } from './components/skia';
 import type { MoveResult } from './state/move-executor';
 import type { ChessboardRef } from './hooks';
 import type { ChessboardState } from './helpers/get-chessboard-state';
-import type { Arrow, EffectParams, SquareMark } from './types';
+import type {
+  Arrow,
+  EffectParams,
+  GameOverLabels,
+  GameResult,
+  SquareMark,
+} from './types';
 
 export interface ChessboardProps
   extends Omit<BoardStateProviderProps, 'children'> {
@@ -21,6 +27,10 @@ export interface ChessboardProps
   marks?: SquareMark[];
   /** Static annotation arrows (coach lines, hints). */
   arrows?: Arrow[];
+  /** Terminal state; badges both kings with how the game ended. */
+  gameResult?: GameResult | null;
+  /** Localized badge text for `gameResult`. */
+  gameOverLabels?: GameOverLabels;
   /**
    * Optional custom piece sprite sheet. Must match the standard
    * 6×2 / 128px-cell layout (row 0 = white p,n,b,r,q,k; row 1 =
@@ -52,6 +62,8 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
       renderEffect,
       marks,
       arrows,
+      gameResult,
+      gameOverLabels,
       spriteSource,
       fontSource,
     },
@@ -77,6 +89,8 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
           renderEffect={renderEffect}
           marks={marks}
           arrows={arrows}
+          gameResult={gameResult}
+          gameOverLabels={gameOverLabels}
           spriteSource={spriteSource}
         />
       </BoardStateProvider>
@@ -90,4 +104,12 @@ export default Chessboard;
 export { Chessboard };
 export { preloadPieceSpriteSheet } from './assets/piece-images';
 export type { ChessboardRef, ChessboardState, MoveResult, Move };
-export type { Arrow, EffectParams, SquareMark, SquareMarkIcon } from './types';
+export type {
+  Arrow,
+  EffectParams,
+  GameResult,
+  GameOverReason,
+  GameOverLabels,
+  SquareMark,
+  SquareMarkIcon,
+} from './types';
