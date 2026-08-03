@@ -34,6 +34,22 @@ export type BoardStateProviderProps = {
   playerSide?: Color | 'both';
   /** Allow queueing a move during the opponent's turn (needs `playerSide`). */
   premovesEnabled?: boolean;
+  /** Scale a piece grows to while it is picked up. Default `1.2`. */
+  dragScale?: number;
+  /**
+   * Lift the rendered dragged piece above the finger, as a fraction of one
+   * square. Visual only — the drop target tracks the finger. Default `0`.
+   */
+  dragOffsetY?: number;
+  /** Highlight the hovered cell while dragging. Default `true`. */
+  dragHoverEnabled?: boolean;
+  /** Diameter of the hover disc, in squares. Default `1.7`. */
+  dragHoverRingScale?: number;
+  /** Legal-move dot radius as a fraction of a square. Default `0.16`. */
+  dotScale?: number;
+  /** Dot reveal / dismiss durations in ms. Default `140` / `100`. */
+  dotRevealMs?: number;
+  dotDismissMs?: number;
   flipped?: boolean;
   withLetters?: boolean;
   withNumbers?: boolean;
@@ -54,6 +70,9 @@ const defaultColors: BoardConfig['colors'] = {
   lastMoveHighlight: 'rgba(255,255,0, 0.5)',
   checkmateHighlight: '#E84855',
   premoveHighlight: 'rgba(231, 76, 60, 0.55)',
+  hoverSquare: 'rgba(255, 255, 255, 0.32)',
+  hoverRing: 'rgba(255, 255, 255, 0.18)',
+  legalMoveDot: 'rgba(0, 0, 0, 0.3)',
   promotionPieceButton: '#FF9B71',
 };
 
@@ -70,6 +89,13 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
   gestureEnabled = true,
   playerSide = 'both',
   premovesEnabled = false,
+  dragScale = 1.2,
+  dragOffsetY = 0,
+  dragHoverEnabled = true,
+  dragHoverRingScale = 1.7,
+  dotScale = 0.16,
+  dotRevealMs = 140,
+  dotDismissMs = 100,
   flipped = false,
   withLetters = true,
   withNumbers = true,
@@ -87,6 +113,13 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
       gestureEnabled,
       playerSide,
       premovesEnabled,
+      dragScale,
+      dragOffsetY,
+      dragHoverEnabled,
+      dragHoverRingScale,
+      dotScale,
+      dotRevealMs,
+      dotDismissMs,
       flipped,
       withLetters,
       withNumbers,
@@ -101,6 +134,13 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
       gestureEnabled,
       playerSide,
       premovesEnabled,
+      dragScale,
+      dragOffsetY,
+      dragHoverEnabled,
+      dragHoverRingScale,
+      dotScale,
+      dotRevealMs,
+      dotDismissMs,
       flipped,
       withLetters,
       withNumbers,

@@ -62,6 +62,7 @@ const createMockBoardState = (chess: Chess, pieceSize: number): BoardState => {
     legalTargets: makeMutable(collectLegalTargets(chess)),
     premoveTargets: makeMutable({}),
     premove: makeMutable<{ from: Square; to: Square } | null>(null),
+    hoverSquare: makeMutable<Square | null>(null),
   };
 };
 

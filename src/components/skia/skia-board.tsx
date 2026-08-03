@@ -17,6 +17,7 @@ import { SkiaPiecesAtlas } from './skia-pieces-atlas';
 import { SkiaMarks } from './skia-marks';
 import { SkiaArrows } from './skia-arrows';
 import { SkiaSquareHighlights } from './skia-square-highlights';
+import { SkiaHover } from './skia-hover';
 
 const styles = StyleSheet.create({
   canvas: {
@@ -117,6 +118,9 @@ export const SkiaBoard: React.FC<SkiaBoardProps> = React.memo(
           boardState={boardState}
           pieceSize={pieceSize}
         />
+        {/* Under the raised piece and the dots: it marks the destination,
+            so it must not paint over what is being dropped there. */}
+        <SkiaHover config={config} boardState={boardState} />
         <SkiaDots config={config} boardState={boardState} />
         <SkiaPiecesAtlas
           layer="raised"

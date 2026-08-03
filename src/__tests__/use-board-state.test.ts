@@ -57,6 +57,7 @@ const createBoardState = (
     legalTargets: makeMutable(collectLegalTargets(chess)),
     premoveTargets: makeMutable({}),
     premove: makeMutable<{ from: Square; to: Square } | null>(null),
+    hoverSquare: makeMutable<Square | null>(null),
   };
 
   return { boardState, chess };

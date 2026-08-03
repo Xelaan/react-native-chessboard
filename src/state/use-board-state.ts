@@ -148,6 +148,7 @@ export const useBoardState = (
   // executor maintains them from there.
   const premoveTargets = useSharedValue<LegalTargets>({});
   const premove = useSharedValue<{ from: Square; to: Square } | null>(null);
+  const hoverSquare = useSharedValue<Square | null>(null);
 
   // Latest layout, read by the fen-reset effect WITHOUT subscribing to it.
   // The fen effect resets the board to `initialFen`; layout changes (flip /
@@ -266,6 +267,7 @@ export const useBoardState = (
     legalTargets,
     premoveTargets,
     premove,
+    hoverSquare,
   ]);
 
   const boardState = useMemo(
@@ -281,6 +283,7 @@ export const useBoardState = (
       legalTargets,
       premoveTargets,
       premove,
+      hoverSquare,
     }),
     [
       squareStates,
@@ -294,6 +297,7 @@ export const useBoardState = (
       legalTargets,
       premoveTargets,
       premove,
+      hoverSquare,
     ]
   );
 

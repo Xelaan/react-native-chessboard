@@ -37,6 +37,13 @@ const makeConfig = (overrides: Partial<BoardConfig> = {}): BoardConfig => ({
   gestureEnabled: true,
   playerSide: 'both' as const,
   premovesEnabled: false,
+  dragScale: 1.2,
+  dragOffsetY: 0,
+  dragHoverEnabled: true,
+  dragHoverRingScale: 1.7,
+  dotScale: 0.16,
+  dotRevealMs: 140,
+  dotDismissMs: 100,
   flipped: false,
   withLetters: false,
   withNumbers: false,
@@ -46,6 +53,9 @@ const makeConfig = (overrides: Partial<BoardConfig> = {}): BoardConfig => ({
     lastMoveHighlight: 'rgba(255,255,0,0.5)',
     checkmateHighlight: '#E84855',
     premoveHighlight: 'rgba(231, 76, 60, 0.55)',
+    hoverSquare: 'rgba(255, 255, 255, 0.32)',
+    hoverRing: 'rgba(255, 255, 255, 0.18)',
+    legalMoveDot: 'rgba(0, 0, 0, 0.3)',
     promotionPieceButton: '#FF9B71',
   },
   animations: {
@@ -92,6 +102,7 @@ const makeBoardState = (fen?: string): BoardState => {
     legalTargets: makeMutable(collectLegalTargets(chess)),
     premoveTargets: makeMutable({}),
     premove: makeMutable<{ from: Square; to: Square } | null>(null),
+    hoverSquare: makeMutable<Square | null>(null),
   };
 };
 
@@ -378,5 +389,41 @@ describe('piece layering', () => {
 
     expect(firstAtlas).toBeLessThan(firstPath);
     expect(firstPath).toBeLessThan(lastAtlas);
+  });
+
+  describe('configuration', () => {
+    it('sizes the dots from dotScale', () => {
+      const boardState = makeBoardState();
+      select(boardState, 'e2' as Square, ['e3' as Square]);
+
+      const small = filledCircles(
+        renderPaths(boardState, makeConfig({ dotScale: 0.1 }))
+      );
+      const large = filledCircles(
+        renderPaths(boardState, makeConfig({ dotScale: 0.3 }))
+      );
+
+      expect(large[0].radius / small[0].radius).toBeCloseTo(3, 5);
+    });
+
+    it('colours the dots from the palette', () => {
+      const boardState = makeBoardState();
+      select(boardState, 'e2' as Square, ['e3' as Square]);
+      const config = makeConfig();
+      config.colors.legalMoveDot = '#ff00ff';
+
+      const tree = renderToTree(
+        <Group>
+          <SkiaDots config={config} boardState={boardState} />
+        </Group>
+      );
+      const painted = findAllByType(tree, 'skia-path').map(
+        (node) => (node.props as { color: string }).color
+      );
+
+      expect(painted).toContain('#ff00ff');
+      // Nothing should still be carrying the old hardcoded black.
+      expect(painted).not.toContain('rgba(0, 0, 0, 0.3)');
+    });
   });
 });

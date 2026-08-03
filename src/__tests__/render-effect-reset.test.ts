@@ -65,6 +65,7 @@ const createMockBoardState = (chess: Chess): BoardState => {
     legalTargets: makeMutable(collectLegalTargets(chess)),
     premoveTargets: makeMutable({}),
     premove: makeMutable<{ from: Square; to: Square } | null>(null),
+    hoverSquare: makeMutable<Square | null>(null),
   };
 };
 
@@ -74,6 +75,13 @@ const config: BoardConfig = {
   gestureEnabled: true,
   playerSide: 'both' as const,
   premovesEnabled: false,
+  dragScale: 1.2,
+  dragOffsetY: 0,
+  dragHoverEnabled: true,
+  dragHoverRingScale: 1.7,
+  dotScale: 0.16,
+  dotRevealMs: 140,
+  dotDismissMs: 100,
   flipped: false,
   withLetters: false,
   withNumbers: false,
@@ -83,6 +91,9 @@ const config: BoardConfig = {
     lastMoveHighlight: 'rgba(255,255,0,0.5)',
     checkmateHighlight: '#E84855',
     premoveHighlight: 'rgba(231, 76, 60, 0.55)',
+    hoverSquare: 'rgba(255, 255, 255, 0.32)',
+    hoverRing: 'rgba(255, 255, 255, 0.18)',
+    legalMoveDot: 'rgba(0, 0, 0, 0.3)',
     promotionPieceButton: '#FF9B71',
   },
   animations: {

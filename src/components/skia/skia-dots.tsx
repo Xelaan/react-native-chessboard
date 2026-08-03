@@ -23,12 +23,13 @@ interface SkiaDotsProps {
 // the shared state itself and simply draws nothing when its slot is unused.
 const DOT_POOL_SIZE = 27;
 
-const REVEAL_MS = 260;
-const DISMISS_MS = 180;
 // Per-square-of-distance delay, as a fraction of the reveal. Capped so a
 // far-flung queen move still starts before the near ones have finished.
-const STAGGER_PER_SQUARE = 0.1;
-const MAX_STAGGER = 0.55;
+// Kept modest: the stagger is what makes a queen's 27 targets take noticeably
+// longer to land than a pawn's two, and a slow reveal reads as lag when you
+// are tapping through a game.
+const STAGGER_PER_SQUARE = 0.06;
+const MAX_STAGGER = 0.3;
 const DOT_ALPHA = 0.5;
 // Capture marker: the square minus the circle inscribed in it, leaving four
 // corner wedges framing the piece. Matches how lichess marks an occupied
@@ -88,7 +89,7 @@ const Dot: React.FC<DotProps> = ({
   const { pieceSize, flipped } = config;
   // ~32% of a square in diameter. Chess UIs converge on roughly 30% (lichess,
   // chess.com); much larger starts competing with the piece it sits under.
-  const radius = pieceSize * 0.16;
+  const radius = pieceSize * config.dotScale;
   const half = pieceSize / 2;
 
   const progress = useDerivedValue(() => {
@@ -164,10 +165,14 @@ const Dot: React.FC<DotProps> = ({
 
   return (
     <>
-      <Path path={dotPath} color="rgba(0, 0, 0, 0.3)" opacity={opacity} />
+      <Path
+        path={dotPath}
+        color={config.colors.legalMoveDot}
+        opacity={opacity}
+      />
       <Path
         path={capturePath}
-        color="rgba(0, 0, 0, 0.3)"
+        color={config.colors.legalMoveDot}
         opacity={captureOpacity}
       />
     </>
@@ -199,7 +204,7 @@ export const SkiaDots: React.FC<SkiaDotsProps> = React.memo(
     const reveal = useDerivedValue<number>(() => {
       const selecting = boardState.validMoves.get().length > 0;
       return withTiming(selecting ? 1 : 0, {
-        duration: selecting ? REVEAL_MS : DISMISS_MS,
+        duration: selecting ? config.dotRevealMs : config.dotDismissMs,
         easing: selecting ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
       });
     });

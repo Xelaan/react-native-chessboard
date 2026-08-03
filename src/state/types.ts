@@ -62,6 +62,8 @@ export interface BoardState {
   premoveTargets: SharedValue<LegalTargets>;
   /** The queued premove, drawn as a highlight until it fires or is cleared. */
   premove: SharedValue<{ from: Square; to: Square } | null>;
+  /** Cell under the finger mid-drag; null when nothing is being dragged. */
+  hoverSquare: SharedValue<Square | null>;
   lastMove: SharedValue<{ from: Square; to: Square } | null>;
   isCheck: SharedValue<boolean>;
   kingInCheckSquare: SharedValue<Square | null>;
@@ -76,6 +78,24 @@ export interface BoardConfig {
    * `playerSide` — without a side there is no "opponent's turn" to queue in.
    */
   premovesEnabled: boolean;
+  /** Scale a piece grows to while it is picked up. */
+  dragScale: number;
+  /**
+   * Lift the *rendered* dragged piece above the finger, as a fraction of one
+   * square, so it isn't hidden under it. Purely visual: the targeted cell —
+   * hover ring and drop — always tracks the finger, or the player would be
+   * aiming with something they can't see.
+   */
+  dragOffsetY: number;
+  /** Highlight the cell under the finger while dragging. */
+  dragHoverEnabled: boolean;
+  /** Diameter of the hover disc, as a multiple of one square. */
+  dragHoverRingScale: number;
+  /** Legal-move dot radius, as a fraction of one square. */
+  dotScale: number;
+  /** How long the dots take to appear / disappear, in ms. */
+  dotRevealMs: number;
+  dotDismissMs: number;
   /**
    * Which colour this device may pick up. `'both'` (the default) is
    * hot-seat / review; `'w'` or `'b'` is a real game, where touching the
@@ -92,6 +112,12 @@ export interface BoardConfig {
     checkmateHighlight: string;
     /** Tint on the two squares of a queued premove. */
     premoveHighlight: string;
+    /** Fill on the cell under the finger while dragging. */
+    hoverSquare: string;
+    /** The disc drawn around that cell. */
+    hoverRing: string;
+    /** Legal-move dots and the capture wedges. */
+    legalMoveDot: string;
     promotionPieceButton: string;
   };
   animations: {

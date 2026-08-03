@@ -22,8 +22,20 @@ export const useBoardGesture = ({
   gestureEnabled,
   onIllegalMove,
 }: UseBoardGestureProps) => {
-  const { pieceSize, animations, flipped, playerSide, premovesEnabled } =
-    config;
+  const {
+    pieceSize,
+    animations,
+    flipped,
+    playerSide,
+    premovesEnabled,
+    dragScale,
+    dragOffsetY,
+    dragHoverEnabled,
+  } = config;
+  // Visual lift, in px. Applied to the rendered piece only — every target
+  // decision below reads the finger, so the player aims with the thing they
+  // are touching rather than the thing floating above it.
+  const liftPx = pieceSize * dragOffsetY;
 
   // Track the currently dragged piece
   const draggedSquare = useSharedValue<Square | null>(null);
@@ -113,7 +125,7 @@ export const useBoardGesture = ({
 
         // Raise and scale the piece
         squareState.zIndex.set(100);
-        squareState.scale.set(withSpring(1.1, animations.scale));
+        squareState.scale.set(withSpring(dragScale, animations.scale));
 
         // Own piece, and ours to move. With premoves on it is also "ours" off
         // turn — that is the whole point of queueing one.
@@ -140,10 +152,21 @@ export const useBoardGesture = ({
           event.x - touchOffsetX.get() - pieceSize / 2
         );
         squareState.translateY.set(
-          event.y - touchOffsetY.get() - pieceSize / 2
+          event.y - touchOffsetY.get() - pieceSize / 2 - liftPx
         );
+
+        if (dragHoverEnabled) {
+          boardState.hoverSquare.set(
+            positionToSquare(
+              Math.max(0, Math.min(event.x, pieceSize * 8 - 1)),
+              Math.max(0, Math.min(event.y, pieceSize * 8 - 1)),
+              pieceSize,
+              flipped
+            )
+          );
+        }
       })
-      .onEnd(() => {
+      .onEnd((event) => {
         'worklet';
         const square = draggedSquare.get();
         if (!square) return;
@@ -189,11 +212,12 @@ export const useBoardGesture = ({
           return;
         }
 
-        // Calculate drop position with bounds clamping
-        const dropX = squareState.translateX.get() + pieceSize / 2;
-        const dropY = squareState.translateY.get() + pieceSize / 2;
-        const clampedX = Math.max(0, Math.min(dropX, pieceSize * 8 - 1));
-        const clampedY = Math.max(0, Math.min(dropY, pieceSize * 8 - 1));
+        // Drop where the FINGER is, not where the piece is drawn: with
+        // `dragOffsetY` the piece floats above the touch, and judging the drop
+        // by the sprite would land moves a square away from where the player
+        // aimed.
+        const clampedX = Math.max(0, Math.min(event.x, pieceSize * 8 - 1));
+        const clampedY = Math.max(0, Math.min(event.y, pieceSize * 8 - 1));
         const targetSquare = positionToSquare(
           clampedX,
           clampedY,
@@ -271,6 +295,10 @@ export const useBoardGesture = ({
       })
       .onFinalize(() => {
         'worklet';
+        // Always, however the drag ended — dropped, cancelled or snapped
+        // back. Clearing this per-branch left the ring stranded on whichever
+        // path forgot it.
+        boardState.hoverSquare.set(null);
         const square = draggedSquare.get();
         if (square) {
           const squareState = boardState.squares[square];
@@ -350,6 +378,9 @@ export const useBoardGesture = ({
     gestureEnabled,
     playerSide,
     premovesEnabled,
+    dragScale,
+    dragHoverEnabled,
+    liftPx,
     handleQueuePremove,
     handleTryMove,
     handleSelectPiece,

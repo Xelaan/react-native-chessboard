@@ -56,6 +56,13 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
       gestureEnabled,
       playerSide,
       premovesEnabled,
+      dragScale,
+      dragOffsetY,
+      dragHoverEnabled,
+      dragHoverRingScale,
+      dotScale,
+      dotRevealMs,
+      dotDismissMs,
       flipped,
       withLetters,
       withNumbers,
@@ -82,6 +89,13 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
         gestureEnabled={gestureEnabled}
         playerSide={playerSide}
         premovesEnabled={premovesEnabled}
+        dragScale={dragScale}
+        dragOffsetY={dragOffsetY}
+        dragHoverEnabled={dragHoverEnabled}
+        dragHoverRingScale={dragHoverRingScale}
+        dotScale={dotScale}
+        dotRevealMs={dotRevealMs}
+        dotDismissMs={dotDismissMs}
         flipped={flipped}
         withLetters={withLetters}
         withNumbers={withNumbers}

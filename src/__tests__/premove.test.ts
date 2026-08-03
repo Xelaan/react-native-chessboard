@@ -29,6 +29,13 @@ const makeConfig = (overrides: Partial<BoardConfig> = {}): BoardConfig => ({
   pieceSize: PIECE_SIZE,
   gestureEnabled: true,
   premovesEnabled: true,
+  dragScale: 1.2,
+  dragOffsetY: 0,
+  dragHoverEnabled: true,
+  dragHoverRingScale: 1.7,
+  dotScale: 0.16,
+  dotRevealMs: 140,
+  dotDismissMs: 100,
   playerSide: 'w',
   flipped: false,
   withLetters: false,
@@ -39,6 +46,9 @@ const makeConfig = (overrides: Partial<BoardConfig> = {}): BoardConfig => ({
     lastMoveHighlight: 'rgba(255, 255, 0, 0.4)',
     checkmateHighlight: 'rgba(255, 0, 0, 0.4)',
     premoveHighlight: 'rgba(231, 76, 60, 0.55)',
+    hoverSquare: 'rgba(255, 255, 255, 0.32)',
+    hoverRing: 'rgba(255, 255, 255, 0.18)',
+    legalMoveDot: 'rgba(0, 0, 0, 0.3)',
     promotionPieceButton: 'rgba(255, 255, 255, 0.8)',
   },
   animations: {
@@ -85,6 +95,7 @@ const makeBoardState = (chess: Chess): BoardState => {
     legalTargets: makeMutable(collectLegalTargets(chess)),
     premoveTargets: makeMutable({}),
     premove: makeMutable<{ from: Square; to: Square } | null>(null),
+    hoverSquare: makeMutable<Square | null>(null),
   };
 };
 

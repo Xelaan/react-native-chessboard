@@ -64,6 +64,7 @@ const createMockBoardState = (chess: Chess): BoardState => {
     legalTargets: makeMutable(collectLegalTargets(chess)),
     premoveTargets: makeMutable({}),
     premove: makeMutable<{ from: Square; to: Square } | null>(null),
+    hoverSquare: makeMutable<Square | null>(null),
   };
 };
 
@@ -73,6 +74,13 @@ const config: BoardConfig = {
   gestureEnabled: true,
   playerSide: 'both' as const,
   premovesEnabled: false,
+  dragScale: 1.2,
+  dragOffsetY: 0,
+  dragHoverEnabled: true,
+  dragHoverRingScale: 1.7,
+  dotScale: 0.16,
+  dotRevealMs: 140,
+  dotDismissMs: 100,
   flipped: false,
   withLetters: false,
   withNumbers: false,
@@ -82,6 +90,9 @@ const config: BoardConfig = {
     lastMoveHighlight: 'rgba(255, 255, 0, 0.4)',
     checkmateHighlight: 'rgba(255, 0, 0, 0.4)',
     premoveHighlight: 'rgba(231, 76, 60, 0.55)',
+    hoverSquare: 'rgba(255, 255, 255, 0.32)',
+    hoverRing: 'rgba(255, 255, 255, 0.18)',
+    legalMoveDot: 'rgba(0, 0, 0, 0.3)',
     promotionPieceButton: 'rgba(255, 255, 255, 0.8)',
   },
   animations: {
@@ -331,6 +342,101 @@ describe('drag lifecycle', () => {
       pan.simulateStart(event(e7Center.x, e7Center.y));
 
       expect(square.zIndex.get()).toBe(100);
+    });
+  });
+
+  describe('drag presentation', () => {
+    it('grows the piece by the configured scale', () => {
+      const chess = new Chess();
+      const boardState = createMockBoardState(chess);
+      const { pan } = mountGesture(boardState, { dragScale: 1.8 });
+      const square = boardState.squares[E2];
+
+      pan.simulateBegin(event(e2Center.x, e2Center.y));
+      pan.simulateStart(event(e2Center.x, e2Center.y));
+
+      expect(square.scale.get()).toBe(1.8);
+    });
+
+    it('lifts the rendered piece above the finger', () => {
+      const chess = new Chess();
+      const boardState = createMockBoardState(chess);
+      const { pan } = mountGesture(boardState, { dragOffsetY: 0.9 });
+      const square = boardState.squares[E2];
+
+      pan.simulateBegin(event(e2Center.x, e2Center.y));
+      pan.simulateStart(event(e2Center.x, e2Center.y));
+      pan.simulateUpdate(event(e2Center.x, e2Center.y));
+
+      // Drawn 0.9 of a square above where the finger actually is.
+      expect(square.translateY.get()).toBeCloseTo(
+        e2Origin.y - PIECE_SIZE * 0.9,
+        5
+      );
+    });
+
+    it('drops where the finger is, not where the piece is drawn', () => {
+      // The whole hazard of an offset: aim at e4 with a piece floating a
+      // square higher, and a sprite-based drop would land on e5.
+      const chess = new Chess();
+      const boardState = createMockBoardState(chess);
+      const { pan, moveExecutor } = mountGesture(boardState, {
+        dragOffsetY: 0.9,
+      });
+      const e4Origin = squareToPosition('e4' as Square, PIECE_SIZE, false);
+      const e4Center = {
+        x: e4Origin.x + PIECE_SIZE / 2,
+        y: e4Origin.y + PIECE_SIZE / 2,
+      };
+
+      pan.simulateBegin(event(e2Center.x, e2Center.y));
+      pan.simulateStart(event(e2Center.x, e2Center.y));
+      pan.simulateUpdate(event(e4Center.x, e4Center.y));
+      pan.simulateEnd(event(e4Center.x, e4Center.y));
+
+      expect(moveExecutor.tryMove).toHaveBeenCalledWith('e2', 'e4');
+    });
+
+    it('tracks the hovered square with the finger', () => {
+      const chess = new Chess();
+      const boardState = createMockBoardState(chess);
+      const { pan } = mountGesture(boardState, { dragOffsetY: 0.9 });
+      const e4Origin = squareToPosition('e4' as Square, PIECE_SIZE, false);
+
+      pan.simulateBegin(event(e2Center.x, e2Center.y));
+      pan.simulateStart(event(e2Center.x, e2Center.y));
+      pan.simulateUpdate(
+        event(e4Origin.x + PIECE_SIZE / 2, e4Origin.y + PIECE_SIZE / 2)
+      );
+
+      expect(boardState.hoverSquare.get()).toBe('e4');
+    });
+
+    it('clears the hover when the drag ends', () => {
+      const chess = new Chess();
+      const boardState = createMockBoardState(chess);
+      const { pan } = mountGesture(boardState);
+
+      pan.simulateBegin(event(e2Center.x, e2Center.y));
+      pan.simulateStart(event(e2Center.x, e2Center.y));
+      pan.simulateUpdate(event(e2Center.x, e2Center.y - PIECE_SIZE * 2));
+      pan.simulateEnd(event(e2Center.x, e2Center.y - PIECE_SIZE * 2));
+      // Real gestures always finalize, whatever happened on the way out.
+      pan.simulateFinalize(event(e2Center.x, e2Center.y - PIECE_SIZE * 2));
+
+      expect(boardState.hoverSquare.get()).toBeNull();
+    });
+
+    it('leaves the hover alone when hover is switched off', () => {
+      const chess = new Chess();
+      const boardState = createMockBoardState(chess);
+      const { pan } = mountGesture(boardState, { dragHoverEnabled: false });
+
+      pan.simulateBegin(event(e2Center.x, e2Center.y));
+      pan.simulateStart(event(e2Center.x, e2Center.y));
+      pan.simulateUpdate(event(e2Center.x, e2Center.y - PIECE_SIZE * 2));
+
+      expect(boardState.hoverSquare.get()).toBeNull();
     });
   });
 });
