@@ -1,6 +1,7 @@
 import React, {
   useMemo,
   useCallback,
+  useEffect,
   useState,
   forwardRef,
   useRef,
@@ -206,6 +207,13 @@ export const GestureBoard = forwardRef<ChessboardRef, GestureBoardProps>(
         effectSharedValues,
       ]
     );
+
+    // Seed the premove map: `syncPremoveState` otherwise only runs after a
+    // move, so a board that mounts on the opponent's turn would offer nothing
+    // to queue against until they moved.
+    useEffect(() => {
+      moveExecutor.syncPremoveState();
+    }, [moveExecutor]);
 
     // Setup ref API
     useChessboardRef({

@@ -42,6 +42,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
       boardSize,
       gestureEnabled,
       playerSide,
+      premovesEnabled,
       flipped,
       withLetters,
       withNumbers,
@@ -62,6 +63,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
         boardSize={boardSize}
         gestureEnabled={gestureEnabled}
         playerSide={playerSide}
+        premovesEnabled={premovesEnabled}
         flipped={flipped}
         withLetters={withLetters}
         withNumbers={withNumbers}

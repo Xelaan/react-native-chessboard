@@ -22,7 +22,8 @@ export const useBoardGesture = ({
   gestureEnabled,
   onIllegalMove,
 }: UseBoardGestureProps) => {
-  const { pieceSize, animations, flipped, playerSide } = config;
+  const { pieceSize, animations, flipped, playerSide, premovesEnabled } =
+    config;
 
   // Track the currently dragged piece
   const draggedSquare = useSharedValue<Square | null>(null);
@@ -48,6 +49,13 @@ export const useBoardGesture = ({
   const handleSelectPiece = useCallback(
     (square: Square) => {
       moveExecutor.selectPiece(square);
+    },
+    [moveExecutor]
+  );
+
+  const handleQueuePremove = useCallback(
+    (from: Square, to: Square) => {
+      moveExecutor.queuePremove(from, to);
     },
     [moveExecutor]
   );
@@ -107,11 +115,14 @@ export const useBoardGesture = ({
         squareState.zIndex.set(100);
         squareState.scale.set(withSpring(1.1, animations.scale));
 
-        // Only show valid moves (dots) for own pieces we're allowed to move
+        // Own piece, and ours to move. With premoves on it is also "ours" off
+        // turn — that is the whole point of queueing one.
+        const isMine =
+          playerSide === 'both'
+            ? piece?.[0] === turn
+            : piece?.[0] === playerSide;
         const isOwnPiece =
-          piece &&
-          piece[0] === turn &&
-          (playerSide === 'both' || piece[0] === playerSide);
+          piece && isMine && (premovesEnabled || piece[0] === turn);
         if (isOwnPiece) {
           scheduleOnRN(handleSelectPiece, square);
         }
@@ -197,9 +208,37 @@ export const useBoardGesture = ({
         // selection's targets, or nothing at all. That silently threw away
         // legal moves, and when the stale list happened to contain the drop
         // square it animated the piece to a square chess.js never moved it to.
-        const targets = boardState.legalTargets.get()[square] ?? [];
+        // Off turn, the position offers this side no moves at all, so judge
+        // the drop against the premove map instead (empty unless premoves are
+        // on and we are waiting).
+        const premoving =
+          premovesEnabled &&
+          playerSide !== 'both' &&
+          boardState.turn.get() !== playerSide;
+        const targets = premoving
+          ? boardState.premoveTargets.get()[square] ?? []
+          : boardState.legalTargets.get()[square] ?? [];
         const isValidMove =
           targetSquare !== square && targets.includes(targetSquare);
+
+        if (isValidMove && premoving) {
+          // The piece goes home: a premove is a promise, not a move, so the
+          // board must keep showing the real position until it fires.
+          const originalPos = squareToPosition(square, pieceSize, flipped);
+          squareState.translateX.set(
+            withSpring(originalPos.x, animations.snapBack)
+          );
+          squareState.translateY.set(
+            withSpring(originalPos.y, animations.snapBack)
+          );
+          squareState.zIndex.set(0);
+          boardState.selectedSquare.set(null);
+          boardState.validMoves.set([]);
+          scheduleOnRN(handleQueuePremove, square, targetSquare);
+          dragStarted.set(false);
+          draggedSquare.set(null);
+          return;
+        }
 
         if (isValidMove) {
           const targetPos = squareToPosition(targetSquare, pieceSize, flipped);
@@ -310,6 +349,8 @@ export const useBoardGesture = ({
     animations,
     gestureEnabled,
     playerSide,
+    premovesEnabled,
+    handleQueuePremove,
     handleTryMove,
     handleSelectPiece,
     handleIllegalMove,

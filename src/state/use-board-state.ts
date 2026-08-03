@@ -143,6 +143,11 @@ export const useBoardState = (
   const legalTargets = useSharedValue<LegalTargets>(
     collectLegalTargets(chessRef.current)
   );
+  // What the waiting side could play if it were their move, and whatever they
+  // have queued. Both stay empty/null unless premoves are switched on; the
+  // executor maintains them from there.
+  const premoveTargets = useSharedValue<LegalTargets>({});
+  const premove = useSharedValue<{ from: Square; to: Square } | null>(null);
 
   // Latest layout, read by the fen-reset effect WITHOUT subscribing to it.
   // The fen effect resets the board to `initialFen`; layout changes (flip /
@@ -209,6 +214,9 @@ export const useBoardState = (
     // The position just changed under the board, so the cached legality map
     // belongs to the old one.
     legalTargets.set(collectLegalTargets(chess));
+    // A new position invalidates anything queued against the old one.
+    premoveTargets.set({});
+    premove.set(null);
 
     // Commit every square in a single UI-runtime transaction. Setting each
     // field from JS schedules hundreds of independent updates, and Skia is
@@ -256,6 +264,8 @@ export const useBoardState = (
     isCheck,
     kingInCheckSquare,
     legalTargets,
+    premoveTargets,
+    premove,
   ]);
 
   const boardState = useMemo(
@@ -269,6 +279,8 @@ export const useBoardState = (
       isCheck,
       kingInCheckSquare,
       legalTargets,
+      premoveTargets,
+      premove,
     }),
     [
       squareStates,
@@ -280,6 +292,8 @@ export const useBoardState = (
       isCheck,
       kingInCheckSquare,
       legalTargets,
+      premoveTargets,
+      premove,
     ]
   );
 

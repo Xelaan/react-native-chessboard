@@ -41,6 +41,7 @@ const makeConfig = (overrides: Partial<BoardConfig> = {}): BoardConfig => ({
   pieceSize: PIECE_SIZE,
   gestureEnabled: true,
   playerSide: 'both' as const,
+  premovesEnabled: false,
   flipped: false,
   withLetters: true,
   withNumbers: true,
@@ -49,6 +50,7 @@ const makeConfig = (overrides: Partial<BoardConfig> = {}): BoardConfig => ({
     black: '#000',
     lastMoveHighlight: 'rgba(255,255,0,0.5)',
     checkmateHighlight: '#E84855',
+    premoveHighlight: 'rgba(231, 76, 60, 0.55)',
     promotionPieceButton: '#FF9B71',
   },
   animations: {
@@ -92,6 +94,8 @@ const makeBoardState = (): BoardState => {
     isCheck: makeMutable(false),
     kingInCheckSquare: makeMutable<Square | null>(null),
     legalTargets: makeMutable(collectLegalTargets(chess)),
+    premoveTargets: makeMutable({}),
+    premove: makeMutable<{ from: Square; to: Square } | null>(null),
   };
 };
 

@@ -12,6 +12,10 @@ import {
 } from '../helpers/get-chessboard-state';
 import { findKingSquare } from '../helpers/find-king-square';
 import { collectLegalTargets } from '../helpers/collect-legal-targets';
+import {
+  collectPremoveTargets,
+  isPremoveTarget,
+} from '../helpers/collect-premove-targets';
 
 export type MoveResult = {
   move: Move;
@@ -237,7 +241,113 @@ export const createMoveExecutor = (
       callbacks.onMove(result);
     }
 
+    // The turn just changed, so either a queued premove is now playable or
+    // the waiting side needs a fresh map to queue against.
+    syncPremoveState();
+
     return move;
+  };
+
+  /**
+   * Keeps the premove queue honest after a move lands.
+   *
+   * Fires whatever is queued the moment it becomes the local player's turn,
+   * re-validating first: a premove is accepted optimistically against a
+   * turn-flipped position, and the opponent's actual move may have made it
+   * illegal (the square got blocked, the piece got captured, the king is in
+   * check). An illegal one is dropped silently — that is the deal the player
+   * accepted when they premoved.
+   *
+   * While it is the opponent's turn, publishes the map the gesture handler
+   * judges premove drops against.
+   */
+  const syncPremoveState = (): void => {
+    const { premovesEnabled, playerSide } = config;
+    if (!premovesEnabled || playerSide === 'both') {
+      boardState.premoveTargets.set({});
+      boardState.premove.set(null);
+      return;
+    }
+
+    const ourTurn = chess.turn() === playerSide;
+    if (!ourTurn) {
+      // Their move: nothing to fire, but the player may queue against the
+      // position as it would be if it were theirs.
+      boardState.premoveTargets.set(collectPremoveTargets(chess));
+      return;
+    }
+
+    boardState.premoveTargets.set({});
+    const queued = boardState.premove.get();
+    if (!queued) {
+      return;
+    }
+    boardState.premove.set(null);
+    clearPremoveHighlights(queued);
+
+    const targets = collectLegalTargets(chess);
+    if (!isPremoveTarget(targets, queued.from, queued.to)) {
+      // No longer legal — the opponent answered in a way that killed it.
+      return;
+    }
+    // A fired premove is an ordinary move: it animates and reports through
+    // `onMove` like any other, because from here on it *is* the player's move.
+    executeMove(queued.from, queued.to, promotionPieceFor(queued));
+  };
+
+  /** Auto-queens a premoved pawn reaching the last rank. */
+  const promotionPieceFor = (queued: {
+    from: Square;
+    to: Square;
+  }): PieceSymbol | undefined => {
+    const piece = chess.get(queued.from);
+    if (!piece || piece.type !== 'p') return undefined;
+    const rank = queued.to[1];
+    // There is no dialog to open mid-flight, and a queen is right almost
+    // always; a player who wants otherwise can move rather than premove.
+    return rank === '8' || rank === '1' ? ('q' as PieceSymbol) : undefined;
+  };
+
+  const clearPremoveHighlights = (queued: {
+    from: Square;
+    to: Square;
+  }): void => {
+    boardState.highlights[queued.from].color.set(null);
+    boardState.highlights[queued.to].color.set(null);
+  };
+
+  /**
+   * Queues a premove, replacing any previous one. Returns whether it was
+   * accepted — a caller can fall back to its illegal-move handling when not.
+   */
+  const queuePremove = (from: Square, to: Square): boolean => {
+    const { premovesEnabled, playerSide } = config;
+    if (
+      !premovesEnabled ||
+      playerSide === 'both' ||
+      chess.turn() === playerSide
+    ) {
+      return false;
+    }
+    if (!isPremoveTarget(boardState.premoveTargets.get(), from, to)) {
+      return false;
+    }
+    const previous = boardState.premove.get();
+    if (previous) {
+      clearPremoveHighlights(previous);
+    }
+    boardState.premove.set({ from, to });
+    boardState.highlights[from].color.set(config.colors.premoveHighlight);
+    boardState.highlights[to].color.set(config.colors.premoveHighlight);
+    return true;
+  };
+
+  /** Drops the queued premove — cancelled by the player, or by a reset. */
+  const clearPremove = (): void => {
+    const queued = boardState.premove.get();
+    if (!queued) return;
+    boardState.premove.set(null);
+    clearPremoveHighlights(queued);
   };
 
   const isPromotionMove = (from: Square, to: Square): boolean => {
@@ -420,6 +530,9 @@ export const createMoveExecutor = (
     boardState.turn.set(chess.turn());
     // The position changed, so the gesture handler's legality map is stale.
     boardState.legalTargets.set(collectLegalTargets(chess));
+    // Anything queued belonged to the position being replaced.
+    boardState.premove.set(null);
+    boardState.premoveTargets.set({});
     boardState.selectedSquare.set(null);
     boardState.validMoves.set([]);
     boardState.lastMove.set(lastMove);
@@ -520,6 +633,9 @@ export const createMoveExecutor = (
     resetBoard,
     undo,
     redo,
+    queuePremove,
+    clearPremove,
+    syncPremoveState,
     canUndo,
     canRedo,
     clearRedo,

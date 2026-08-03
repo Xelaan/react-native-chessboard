@@ -55,6 +55,13 @@ export interface BoardState {
    * JS, which is what let fast drags be judged against a stale selection.
    */
   legalTargets: SharedValue<LegalTargets>;
+  /**
+   * Moves the waiting player could make if it were their turn. Empty unless
+   * premoves are enabled and it is the opponent's move.
+   */
+  premoveTargets: SharedValue<LegalTargets>;
+  /** The queued premove, drawn as a highlight until it fires or is cleared. */
+  premove: SharedValue<{ from: Square; to: Square } | null>;
   lastMove: SharedValue<{ from: Square; to: Square } | null>;
   isCheck: SharedValue<boolean>;
   kingInCheckSquare: SharedValue<Square | null>;
@@ -64,6 +71,11 @@ export interface BoardConfig {
   boardSize: number;
   pieceSize: number;
   gestureEnabled: boolean;
+  /**
+   * Let the player queue a move during the opponent's turn. Needs
+   * `playerSide` — without a side there is no "opponent's turn" to queue in.
+   */
+  premovesEnabled: boolean;
   /**
    * Which colour this device may pick up. `'both'` (the default) is
    * hot-seat / review; `'w'` or `'b'` is a real game, where touching the
@@ -78,6 +90,8 @@ export interface BoardConfig {
     black: string;
     lastMoveHighlight: string;
     checkmateHighlight: string;
+    /** Tint on the two squares of a queued premove. */
+    premoveHighlight: string;
     promotionPieceButton: string;
   };
   animations: {

@@ -16,6 +16,7 @@ const baseConfig = (overrides: Partial<BoardConfig> = {}): BoardConfig => ({
   pieceSize: 50,
   gestureEnabled: true,
   playerSide: 'both' as const,
+  premovesEnabled: false,
   flipped: false,
   withLetters: true,
   withNumbers: true,
@@ -24,6 +25,7 @@ const baseConfig = (overrides: Partial<BoardConfig> = {}): BoardConfig => ({
     black: '#000',
     lastMoveHighlight: 'rgba(255,255,0,0.5)',
     checkmateHighlight: '#E84855',
+    premoveHighlight: 'rgba(231, 76, 60, 0.55)',
     promotionPieceButton: '#FF9B71',
   },
   animations: {

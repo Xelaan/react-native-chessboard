@@ -20,6 +20,7 @@ const config: BoardConfig = {
   pieceSize: PIECE_SIZE,
   gestureEnabled: true,
   playerSide: 'both',
+  premovesEnabled: false,
   flipped: false,
   withLetters: false,
   withNumbers: false,
@@ -28,6 +29,7 @@ const config: BoardConfig = {
     black: '#b58863',
     lastMoveHighlight: 'rgba(255, 255, 0, 0.4)',
     checkmateHighlight: 'rgba(255, 0, 0, 0.4)',
+    premoveHighlight: 'rgba(231, 76, 60, 0.55)',
     promotionPieceButton: 'rgba(255, 255, 255, 0.8)',
   },
   animations: {

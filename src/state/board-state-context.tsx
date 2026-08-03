@@ -32,6 +32,8 @@ export type BoardStateProviderProps = {
    * and review boards, where either side may be moved.
    */
   playerSide?: Color | 'both';
+  /** Allow queueing a move during the opponent's turn (needs `playerSide`). */
+  premovesEnabled?: boolean;
   flipped?: boolean;
   withLetters?: boolean;
   withNumbers?: boolean;
@@ -44,6 +46,7 @@ const defaultColors: BoardConfig['colors'] = {
   black: '#62B1A8',
   lastMoveHighlight: 'rgba(255,255,0, 0.5)',
   checkmateHighlight: '#E84855',
+  premoveHighlight: 'rgba(231, 76, 60, 0.55)',
   promotionPieceButton: '#FF9B71',
 };
 
@@ -59,6 +62,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
   boardSize = DEFAULT_BOARD_SIZE,
   gestureEnabled = true,
   playerSide = 'both',
+  premovesEnabled = false,
   flipped = false,
   withLetters = true,
   withNumbers = true,
@@ -73,6 +77,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
       pieceSize,
       gestureEnabled,
       playerSide,
+      premovesEnabled,
       flipped,
       withLetters,
       withNumbers,
@@ -85,6 +90,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
       pieceSize,
       gestureEnabled,
       playerSide,
+      premovesEnabled,
       flipped,
       withLetters,
       withNumbers,
