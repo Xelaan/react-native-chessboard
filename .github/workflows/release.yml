@@ -80,7 +80,10 @@ jobs:
       # registry anyway, so nothing is lost by omitting it.
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 22
+          # Trusted publishing needs Node >= 22.14.0 and npm >= 11.5.1. Pinned
+          # rather than floating on `22` so a runner image change can't quietly
+          # drop below the floor.
+          node-version: 22.14.0
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -95,6 +98,17 @@ jobs:
           BABEL_ENV: production
           NODE_ENV: production
         run: bunx bob build
+
+      # Prints whether the OIDC token endpoint is actually available to this
+      # job. Without `id-token: write` these are unset, npm silently falls
+      # back to token auth, and the failure looks like a registry problem
+      # rather than a permissions one. Values are never printed — only whether
+      # they exist.
+      - name: Check the OIDC environment
+        run: |
+          echo "node: $(node --version)"
+          echo "id-token request URL present: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}${ACTIONS_ID_TOKEN_REQUEST_URL:-NO}"
+          echo "id-token request token present: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+yes}${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-NO}"
 
       - name: npm publish (OIDC + provenance)
         run: |
