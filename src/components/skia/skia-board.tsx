@@ -4,11 +4,12 @@ import type { SkImage } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 import { StyleSheet } from 'react-native';
 import type { BoardConfig, BoardState } from '../../state';
-import type { EffectParams } from '../../types';
+import type { EffectParams, SquareMark } from '../../types';
 import { BoardBackground } from './board-background';
 import { SkiaHighlights } from './skia-highlights';
 import { SkiaDots } from './skia-dots';
 import { SkiaPiecesAtlas } from './skia-pieces-atlas';
+import { SkiaMarks } from './skia-marks';
 
 const styles = StyleSheet.create({
   canvas: {
@@ -22,6 +23,7 @@ interface SkiaBoardProps {
   spriteImage: SkImage | null;
   renderEffect?: (params: EffectParams) => React.ReactNode;
   effectParams?: EffectParams;
+  marks?: SquareMark[];
 }
 
 /**
@@ -46,6 +48,9 @@ const areVisualPropsEqual = (
     previous.spriteImage === next.spriteImage &&
     previous.renderEffect === next.renderEffect &&
     previous.effectParams === next.effectParams &&
+    // Identity, so callers should keep the array stable (memoize it) unless
+    // the marks actually changed — otherwise every parent render repaints.
+    previous.marks === next.marks &&
     previousConfig.boardSize === nextConfig.boardSize &&
     previousConfig.pieceSize === nextConfig.pieceSize &&
     previousConfig.flipped === nextConfig.flipped &&
@@ -62,7 +67,7 @@ const areVisualPropsEqual = (
 };
 
 export const SkiaBoard: React.FC<SkiaBoardProps> = React.memo(
-  ({ config, boardState, spriteImage, renderEffect, effectParams }) => {
+  ({ config, boardState, spriteImage, renderEffect, effectParams, marks }) => {
     const { boardSize, pieceSize } = config;
 
     const progressSV = effectParams?.progress;
@@ -96,6 +101,9 @@ export const SkiaBoard: React.FC<SkiaBoardProps> = React.memo(
           boardState={boardState}
           pieceSize={pieceSize}
         />
+        {/* Above every piece: a verdict badge must never be hidden by the
+            piece it is judging. */}
+        <SkiaMarks config={config} marks={marks} />
       </>
     );
 

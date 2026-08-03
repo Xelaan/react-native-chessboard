@@ -119,6 +119,9 @@ export const Skia = {
       };
       return path;
     },
+    // Glyph paths (square marks). Keeps the source string so tests can tell
+    // a check from a cross without parsing SVG.
+    MakeFromSVGString: (svg: string) => ({ __mock: 'SkPath', svg }),
     // Records the operands so tests can assert what was subtracted from what.
     MakeFromOp: (one: unknown, two: unknown, op: number) => ({
       __mock: 'SkPath',

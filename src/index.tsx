@@ -7,13 +7,18 @@ import { GestureBoard } from './components/skia';
 import type { MoveResult } from './state/move-executor';
 import type { ChessboardRef } from './hooks';
 import type { ChessboardState } from './helpers/get-chessboard-state';
-import type { EffectParams } from './types';
+import type { EffectParams, SquareMark } from './types';
 
 export interface ChessboardProps
   extends Omit<BoardStateProviderProps, 'children'> {
   onMove?: (result: MoveResult) => void;
   onIllegalMove?: (from: Square, to: Square) => void;
   renderEffect?: (params: EffectParams) => React.ReactNode;
+  /**
+   * Animated square badges — puzzle feedback and the like. Keep the array
+   * referentially stable between renders; the board compares it by identity.
+   */
+  marks?: SquareMark[];
   /**
    * Optional custom piece sprite sheet. Must match the standard
    * 6×2 / 128px-cell layout (row 0 = white p,n,b,r,q,k; row 1 =
@@ -42,6 +47,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
       onMove,
       onIllegalMove,
       renderEffect,
+      marks,
       spriteSource,
       fontSource,
     },
@@ -64,6 +70,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
           onMove={onMove}
           onIllegalMove={onIllegalMove}
           renderEffect={renderEffect}
+          marks={marks}
           spriteSource={spriteSource}
         />
       </BoardStateProvider>
@@ -77,4 +84,4 @@ export default Chessboard;
 export { Chessboard };
 export { preloadPieceSpriteSheet } from './assets/piece-images';
 export type { ChessboardRef, ChessboardState, MoveResult, Move };
-export type { EffectParams } from './types';
+export type { EffectParams, SquareMark, SquareMarkIcon } from './types';

@@ -23,6 +23,7 @@ import {
   useBoardStateValues,
 } from '../../state';
 import { createMoveExecutor, MoveResult } from '../../state/move-executor';
+import type { SquareMark } from '../../types';
 import { squareToPosition } from '../../state/use-board-state';
 import { useBoardGesture } from '../../hooks/use-board-gesture';
 import {
@@ -53,11 +54,12 @@ export interface GestureBoardProps {
   onMove?: (result: MoveResult) => void;
   onIllegalMove?: (from: Square, to: Square) => void;
   renderEffect?: (params: EffectParams) => React.ReactNode;
+  marks?: SquareMark[];
   spriteSource?: ImageSourcePropType;
 }
 
 export const GestureBoard = forwardRef<ChessboardRef, GestureBoardProps>(
-  ({ onMove, onIllegalMove, renderEffect, spriteSource }, ref) => {
+  ({ onMove, onIllegalMove, renderEffect, marks, spriteSource }, ref) => {
     const { chess } = useBoardContext();
     const config = useBoardConfig();
     const boardState = useBoardStateValues();
@@ -247,6 +249,7 @@ export const GestureBoard = forwardRef<ChessboardRef, GestureBoardProps>(
         <GestureDetector gesture={gesture}>
           <View style={containerStyle}>
             <SkiaBoard
+              marks={marks}
               config={config}
               boardState={boardState}
               spriteImage={spriteImage}

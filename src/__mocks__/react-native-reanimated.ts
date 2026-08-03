@@ -60,9 +60,16 @@ export const runOnJS = (fn: Function) => fn;
 export const Easing = {
   out: (easing: any) => easing,
   in: (easing: any) => easing,
+  inOut: (easing: any) => easing,
+  linear: (t: number) => t,
   quad: (t: number) => t * t,
   cubic: (t: number) => t * t * t,
+  sin: (t: number) => Math.sin(t),
 };
+
+// Delayed animations settle to their target like the others do here; tests
+// assert on the resting value, not the choreography.
+export const withDelay = <T>(_delayMs: number, animation: T) => animation;
 
 // Fires the reaction once with no previous value, mirroring the initial
 // invocation on device.
@@ -80,6 +87,7 @@ export default {
   makeMutable,
   useDerivedValue,
   withTiming,
+  withDelay,
   withSpring,
   runOnJS,
   Easing,

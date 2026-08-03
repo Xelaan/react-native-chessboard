@@ -18,6 +18,24 @@ type ChessMove = {
 
 type EffectTrigger = 'checkmate' | 'check' | 'stalemate' | '';
 
+/** Glyph shown inside a {@link SquareMark} badge. */
+type SquareMarkIcon = 'cross' | 'check';
+
+/**
+ * An animated badge pinned to a square — a coloured disc with a glyph. Pops
+ * over the square, holds, then settles into its corner. Persists while the
+ * mark is in `marks` and disappears when removed.
+ */
+interface SquareMark {
+  square: Square;
+  /** Which glyph to render. Default: `'cross'`. */
+  icon?: SquareMarkIcon;
+  /** Disc fill. Defaults to green for `'check'`, red for `'cross'`. */
+  color?: string;
+  /** Glyph colour. Defaults to white. */
+  accentColor?: string;
+}
+
 interface EffectParams {
   // Center position of the effect (e.g., king position on checkmate)
   centerX: SharedValue<number>;
@@ -43,4 +61,6 @@ export type {
   PieceSymbol,
   EffectParams,
   EffectTrigger,
+  SquareMark,
+  SquareMarkIcon,
 };
