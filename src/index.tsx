@@ -71,6 +71,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
       spriteSource,
       fontSource,
       backgroundImage,
+      animations,
     },
     ref
   ) => {
@@ -87,6 +88,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
         colors={colors}
         fontSource={fontSource}
         backgroundImage={backgroundImage}
+        animations={animations}
       >
         <GestureBoard
           ref={ref}

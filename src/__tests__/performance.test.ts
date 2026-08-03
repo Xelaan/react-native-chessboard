@@ -71,41 +71,21 @@ const createMockBoardState = (chess: Chess, pieceSize: number): BoardState => {
 
 describe('Performance - Animation Configurations', () => {
   describe('Spring configurations', () => {
-    it('MOVE_SPRING is critically damped', () => {
-      // For critically damped springs: damping = 2 * sqrt(stiffness * mass)
-      // With stiffness=400, mass=1: criticalDamping = 2 * sqrt(400 * 1) = 2 * 20 = 40
-      expect(MOVE_SPRING.stiffness).toBe(400);
-      expect(MOVE_SPRING.damping).toBe(40);
-      expect(MOVE_SPRING.mass).toBe(1);
-
+    // The tuning itself is a product decision — how fast a piece should move
+    // is covered by the settle-time assertions in animations-config.test.ts.
+    // What must hold whatever the numbers are: every spring stays critically
+    // damped, because an overshooting piece reads as a bug rather than a
+    // flourish.
+    it.each([
+      ['MOVE_SPRING', MOVE_SPRING],
+      ['SCALE_SPRING', SCALE_SPRING],
+      ['SNAP_BACK_SPRING', SNAP_BACK_SPRING],
+    ])('%s is critically damped', (_name, spring) => {
       const criticalDamping =
-        2 * Math.sqrt((MOVE_SPRING.stiffness ?? 0) * (MOVE_SPRING.mass ?? 1));
-      expect(MOVE_SPRING.damping).toBe(criticalDamping);
-    });
+        2 * Math.sqrt((spring.stiffness ?? 0) * (spring.mass ?? 1));
 
-    it('SCALE_SPRING is critically damped', () => {
-      // With stiffness=600, mass=1: criticalDamping = 2 * sqrt(600) ≈ 48.99
-      expect(SCALE_SPRING.stiffness).toBe(600);
-      expect(SCALE_SPRING.damping).toBe(49);
-      expect(SCALE_SPRING.mass).toBe(1);
-
-      const criticalDamping =
-        2 * Math.sqrt((SCALE_SPRING.stiffness ?? 0) * (SCALE_SPRING.mass ?? 1));
-      expect(SCALE_SPRING.damping).toBeCloseTo(criticalDamping, 0);
-    });
-
-    it('SNAP_BACK_SPRING is critically damped', () => {
-      // With stiffness=350, mass=1: criticalDamping = 2 * sqrt(350) ≈ 37.42
-      expect(SNAP_BACK_SPRING.stiffness).toBe(350);
-      expect(SNAP_BACK_SPRING.damping).toBe(37);
-      expect(SNAP_BACK_SPRING.mass).toBe(1);
-
-      const criticalDamping =
-        2 *
-        Math.sqrt(
-          (SNAP_BACK_SPRING.stiffness ?? 0) * (SNAP_BACK_SPRING.mass ?? 1)
-        );
-      expect(SNAP_BACK_SPRING.damping).toBeCloseTo(criticalDamping, 0);
+      expect(spring.mass).toBe(1);
+      expect(spring.damping).toBeCloseTo(criticalDamping, 0);
     });
 
     it('all springs have positive stiffness', () => {

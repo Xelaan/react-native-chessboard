@@ -41,6 +41,11 @@ export type BoardStateProviderProps = {
   fontSource?: ImageSourcePropType;
   /** Texture under the squares; needs translucent square colours to show. */
   backgroundImage?: ImageSourcePropType;
+  /**
+   * Override any of the board's spring animations. Merged over the defaults,
+   * so `{ move: … }` retunes moves and leaves lift and snap-back alone.
+   */
+  animations?: Partial<BoardConfig['animations']>;
 };
 
 const defaultColors: BoardConfig['colors'] = {
@@ -71,6 +76,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
   colors,
   fontSource,
   backgroundImage,
+  animations,
 }) => {
   const pieceSize = boardSize / 8;
 
@@ -85,7 +91,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
       withLetters,
       withNumbers,
       colors: { ...defaultColors, ...colors },
-      animations: defaultAnimations,
+      animations: { ...defaultAnimations, ...animations },
       fontSource: fontSource ?? null,
       backgroundImage: backgroundImage ?? null,
     }),
@@ -101,6 +107,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
       colors,
       fontSource,
       backgroundImage,
+      animations,
     ]
   );
 
