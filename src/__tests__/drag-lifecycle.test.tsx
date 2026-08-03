@@ -90,6 +90,7 @@ const config: BoardConfig = {
     snapBack: SNAP_BACK_SPRING,
   },
   fontSource: null,
+  backgroundImage: null,
 };
 
 const event = (x: number, y: number) => ({

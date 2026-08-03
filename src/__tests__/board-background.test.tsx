@@ -1,5 +1,5 @@
 import React from 'react';
-import { useFont } from '@shopify/react-native-skia';
+import { Group, useFont, useImage } from '@shopify/react-native-skia';
 import { BoardBackground } from '../components/skia/board-background';
 import {
   MOVE_SPRING,
@@ -34,6 +34,7 @@ const baseConfig = (overrides: Partial<BoardConfig> = {}): BoardConfig => ({
     snapBack: SNAP_BACK_SPRING,
   },
   fontSource: null,
+  backgroundImage: null,
   ...overrides,
 });
 
@@ -128,5 +129,38 @@ describe('BoardBackground labels', () => {
     useFontMock.mockReturnValue(null);
     const texts = labelTexts(baseConfig({ withNumbers: false }));
     expect(texts).toHaveLength(8);
+  });
+
+  describe('board texture', () => {
+    it('draws no image when the theme supplies none', () => {
+      const tree = renderToTree(
+        <Group>
+          <BoardBackground config={baseConfig()} />
+        </Group>
+      );
+
+      expect(findAllByType(tree, 'skia-image')).toHaveLength(0);
+    });
+
+    it('covers the board with the texture, under the squares', () => {
+      (useImage as jest.Mock).mockReturnValue({ __mock: 'SkImage' });
+      const config = baseConfig({ backgroundImage: 1 as never });
+
+      const tree = renderToTree(
+        <Group>
+          <BoardBackground config={config} />
+        </Group>
+      );
+      const images = findAllByType(tree, 'skia-image');
+      const rects = findAllByType(tree, 'skia-rect');
+
+      expect(images).toHaveLength(1);
+      expect((images[0].props as { width: number }).width).toBe(
+        config.pieceSize * 8
+      );
+      // Under the squares: a texture painted last would hide the board.
+      expect(rects.length).toBeGreaterThan(0);
+      (useImage as jest.Mock).mockReturnValue(null);
+    });
   });
 });

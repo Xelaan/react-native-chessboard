@@ -95,6 +95,7 @@ const config = {
     snapBack: SNAP_BACK_SPRING,
   },
   fontSource: null,
+  backgroundImage: null,
 };
 
 describe('ChessboardRef API', () => {

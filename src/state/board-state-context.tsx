@@ -39,6 +39,8 @@ export type BoardStateProviderProps = {
   withNumbers?: boolean;
   colors?: Partial<BoardConfig['colors']>;
   fontSource?: ImageSourcePropType;
+  /** Texture under the squares; needs translucent square colours to show. */
+  backgroundImage?: ImageSourcePropType;
 };
 
 const defaultColors: BoardConfig['colors'] = {
@@ -68,6 +70,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
   withNumbers = true,
   colors,
   fontSource,
+  backgroundImage,
 }) => {
   const pieceSize = boardSize / 8;
 
@@ -84,6 +87,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
       colors: { ...defaultColors, ...colors },
       animations: defaultAnimations,
       fontSource: fontSource ?? null,
+      backgroundImage: backgroundImage ?? null,
     }),
     [
       boardSize,
@@ -96,6 +100,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
       withNumbers,
       colors,
       fontSource,
+      backgroundImage,
     ]
   );
 

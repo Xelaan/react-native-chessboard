@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import {
+  Image as SkiaImage,
+  useImage,
   Group,
   Rect,
   Text,
@@ -47,14 +49,22 @@ const areBackgroundPropsEqual = (
     previousConfig.fontSource === nextConfig.fontSource &&
     previousConfig.colors.white === nextConfig.colors.white &&
     previousConfig.colors.black === nextConfig.colors.black &&
+    previousConfig.backgroundImage === nextConfig.backgroundImage &&
     (!rendersCoordinates || previousConfig.flipped === nextConfig.flipped)
   );
 };
 
 export const BoardBackground: React.FC<BoardBackgroundProps> = React.memo(
   ({ config }) => {
-    const { pieceSize, colors, flipped, withLetters, withNumbers, fontSource } =
-      config;
+    const {
+      pieceSize,
+      colors,
+      flipped,
+      withLetters,
+      withNumbers,
+      fontSource,
+      backgroundImage,
+    } = config;
 
     const fontSize = pieceSize * 0.15;
 
@@ -75,8 +85,14 @@ export const BoardBackground: React.FC<BoardBackgroundProps> = React.memo(
     );
     const font = customFont ?? systemFont;
 
+    const boardSize = pieceSize * 8;
     const columns = flipped ? COLUMNS_FLIPPED : COLUMNS;
     const rows = flipped ? ROWS_FLIPPED : ROWS;
+
+    // Texture under the cells. Only shows through when the square colours are
+    // translucent — that is the contract: the theme supplies the image AND the
+    // alpha it wants to see it through.
+    const texture = useImage(backgroundImage as Parameters<typeof useImage>[0]);
 
     const squares: React.ReactElement[] = [];
     const labels: React.ReactElement[] = [];
@@ -130,6 +146,16 @@ export const BoardBackground: React.FC<BoardBackgroundProps> = React.memo(
 
     return (
       <Group>
+        {texture ? (
+          <SkiaImage
+            image={texture}
+            x={0}
+            y={0}
+            width={boardSize}
+            height={boardSize}
+            fit="cover"
+          />
+        ) : null}
         {squares}
         {labels}
       </Group>

@@ -100,6 +100,11 @@ export interface BoardConfig {
     snapBack: WithSpringConfig;
   };
   fontSource: ImageSourcePropType | null;
+  /**
+   * Texture drawn under the squares. Only visible where the square colours
+   * are translucent — a theme supplies the image and the alpha together.
+   */
+  backgroundImage: ImageSourcePropType | null;
 }
 
 // All 64 squares on a chessboard

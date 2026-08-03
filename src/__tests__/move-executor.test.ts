@@ -96,6 +96,7 @@ describe('createMoveExecutor', () => {
       snapBack: SNAP_BACK_SPRING,
     },
     fontSource: null,
+    backgroundImage: null,
   };
 
   describe('executeMove', () => {

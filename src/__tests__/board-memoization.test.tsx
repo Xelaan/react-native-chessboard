@@ -59,6 +59,7 @@ const makeConfig = (overrides: Partial<BoardConfig> = {}): BoardConfig => ({
     snapBack: SNAP_BACK_SPRING,
   },
   fontSource: null,
+  backgroundImage: null,
   ...overrides,
 });
 

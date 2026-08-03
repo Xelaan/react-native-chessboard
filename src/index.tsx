@@ -66,6 +66,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
       gameOverLabels,
       spriteSource,
       fontSource,
+      backgroundImage,
     },
     ref
   ) => {
@@ -81,6 +82,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
         withNumbers={withNumbers}
         colors={colors}
         fontSource={fontSource}
+        backgroundImage={backgroundImage}
       >
         <GestureBoard
           ref={ref}
