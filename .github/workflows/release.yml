@@ -80,9 +80,10 @@ jobs:
       # registry anyway, so nothing is lost by omitting it.
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          # Trusted publishing needs Node >= 22.14.0 and npm >= 11.5.1. Pinned
-          # rather than floating on `22` so a runner image change can't quietly
-          # drop below the floor.
+          # Trusted publishing needs Node >= 22.14.0 and npm >= 11.5.1.
+          # Pinned rather than floating so a runner image change can't quietly
+          # drop below the floor — and pinned in step with the npm version
+          # below, which has its own, moving Node requirement.
           node-version: 22.14.0
 
       - name: Install dependencies
@@ -112,8 +113,12 @@ jobs:
 
       - name: npm publish (OIDC + provenance)
         run: |
-          # OIDC Trusted Publishing requires npm >= 11.5.0. The Node 22
-          # toolchain ships an older npm, so upgrade in-job. No
+          # OIDC Trusted Publishing requires npm >= 11.5.1. The Node 22
+          # toolchain ships npm 10, so upgrade in-job — but to a pinned 11.x,
+          # NOT `latest`: npm 12 requires Node ^22.22.2 || ^24.15.0, so
+          # `npm@latest` and a pinned Node drift apart and the install fails
+          # with EBADENGINE. npm 11.19.0 accepts Node >= 22.9.0, so the two
+          # pins agree and stay agreeing until we move them deliberately. No
           # NODE_AUTH_TOKEN and no .npmrc auth line: `npm publish` performs
           # the OIDC handshake itself when a trusted publisher is configured
           # for this package, and emits provenance from the same identity.
@@ -121,7 +126,7 @@ jobs:
           # Note that provenance signing succeeding proves nothing about npm
           # authorization — that goes GitHub OIDC -> Sigstore directly, with
           # npm nowhere in the exchange. Don't read it as a green light.
-          npm install -g npm@latest
+          npm install -g npm@11.19.0
           npm --version
           # Route prerelease versions (0.2.0-beta.1, -rc.1, …) to the
           # `beta` dist-tag so they never clobber `latest`. Plain
