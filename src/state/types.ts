@@ -91,6 +91,15 @@ export interface BoardConfig {
   dragOffsetY: number;
   /** Highlight the cell under the finger while dragging. */
   dragHoverEnabled: boolean;
+  /**
+   * Accept a king dragged onto its own rook as castling, alongside the usual
+   * two-square king move. It is how the move is made over the board, and what
+   * chess.com and lichess accept.
+   *
+   * Drag only: no dot is drawn on the rook and tapping it is not a move, so
+   * the tap-to-move flow keeps offering exactly one spelling of the move.
+   */
+  castleByDraggingToRook: boolean;
   /** Diameter of the hover disc, as a multiple of one square. */
   dragHoverRingScale: number;
   /** Rank / file label size, as a fraction of one square. */

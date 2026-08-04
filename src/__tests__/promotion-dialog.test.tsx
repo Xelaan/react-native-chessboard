@@ -22,6 +22,7 @@ const config = {
   tapScale: 1.08,
   dragOffsetY: 0,
   dragHoverEnabled: true,
+  castleByDraggingToRook: true,
   dragHoverRingScale: 1.7,
   coordinateScale: 0.18,
   dotScale: 0.16,

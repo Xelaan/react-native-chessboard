@@ -45,6 +45,12 @@ export type BoardStateProviderProps = {
   dragOffsetY?: number;
   /** Highlight the hovered cell while dragging. Default `true`. */
   dragHoverEnabled?: boolean;
+  /**
+   * Accept a king *dragged* onto its own rook as castling, as well as the
+   * two-square king move. Tapping the rook is never a move and it never gets a
+   * dot. Default `true`.
+   */
+  castleByDraggingToRook?: boolean;
   /** Diameter of the hover disc, in squares. Default `1.7`. */
   dragHoverRingScale?: number;
   /** Rank / file label size as a fraction of a square. Default `0.18`. */
@@ -108,6 +114,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
   tapScale = 1.08,
   dragOffsetY = 0,
   dragHoverEnabled = true,
+  castleByDraggingToRook = true,
   dragHoverRingScale = 1.7,
   coordinateScale = 0.18,
   dotScale = 0.16,
@@ -134,6 +141,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
       tapScale,
       dragOffsetY,
       dragHoverEnabled,
+      castleByDraggingToRook,
       dragHoverRingScale,
       coordinateScale,
       dotScale,
@@ -157,6 +165,7 @@ export const BoardStateProvider: React.FC<BoardStateProviderProps> = ({
       tapScale,
       dragOffsetY,
       dragHoverEnabled,
+      castleByDraggingToRook,
       dragHoverRingScale,
       coordinateScale,
       dotScale,

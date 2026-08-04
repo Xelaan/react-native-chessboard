@@ -5,6 +5,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import type { Square } from 'chess.js';
 import type { BoardState, BoardConfig } from '../state/types';
 import { positionToSquare, squareToPosition } from '../state/use-board-state';
+import { castleDragTarget } from '../helpers/castle-drag-target';
 import type { MoveExecutor } from '../state/move-executor';
 
 interface UseBoardGestureProps {
@@ -32,6 +33,7 @@ export const useBoardGesture = ({
     tapScale,
     dragOffsetY,
     dragHoverEnabled,
+    castleByDraggingToRook,
   } = config;
   // Visual lift, in px. Applied to the rendered piece only — every target
   // decision below reads the finger, so the player aims with the thing they
@@ -292,8 +294,27 @@ export const useBoardGesture = ({
         const targets = premoving
           ? boardState.premoveTargets.get()[square] ?? []
           : boardState.legalTargets.get()[square] ?? [];
-        const isValidMove =
+        let isValidMove =
           targetSquare !== square && targets.includes(targetSquare);
+
+        // A king dropped on its own rook is castling. Resolve it to the
+        // king's real destination here, before anything moves, so the piece
+        // travels to the square it actually lands on rather than sliding onto
+        // the rook and being corrected afterwards. Premoves included: they
+        // read the same shape of target map, so a queued castle works too.
+        let destination = targetSquare;
+        if (!isValidMove && castleByDraggingToRook) {
+          const castled = castleDragTarget(
+            square,
+            targetSquare,
+            piece,
+            targets
+          );
+          if (castled) {
+            destination = castled;
+            isValidMove = true;
+          }
+        }
 
         if (isValidMove && premoving) {
           // The piece goes home: a premove is a promise, not a move, so the
@@ -308,18 +329,18 @@ export const useBoardGesture = ({
           squareState.zIndex.set(0);
           boardState.selectedSquare.set(null);
           boardState.validMoves.set([]);
-          scheduleOnRN(handleQueuePremove, square, targetSquare);
+          scheduleOnRN(handleQueuePremove, square, destination);
           dragStarted.set(false);
           draggedSquare.set(null);
           return;
         }
 
         if (isValidMove) {
-          const targetPos = squareToPosition(targetSquare, pieceSize, flipped);
+          const targetPos = squareToPosition(destination, pieceSize, flipped);
           squareState.translateX.set(withSpring(targetPos.x, animations.move));
           squareState.translateY.set(withSpring(targetPos.y, animations.move));
           // Note: zIndex stays elevated during animation - move-executor resets it after completion
-          scheduleOnRN(handleTryMove, square, targetSquare);
+          scheduleOnRN(handleTryMove, square, destination);
           dragStarted.set(false);
           draggedSquare.set(null);
           return;
@@ -443,6 +464,7 @@ export const useBoardGesture = ({
     tapScale,
     selectedOnThisTouch,
     dragHoverEnabled,
+    castleByDraggingToRook,
     liftPx,
     handleQueuePremove,
     handleTryMove,

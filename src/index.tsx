@@ -60,6 +60,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
       tapScale,
       dragOffsetY,
       dragHoverEnabled,
+      castleByDraggingToRook,
       dragHoverRingScale,
       coordinateScale,
       dotScale,
@@ -95,6 +96,7 @@ const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
         tapScale={tapScale}
         dragOffsetY={dragOffsetY}
         dragHoverEnabled={dragHoverEnabled}
+        castleByDraggingToRook={castleByDraggingToRook}
         dragHoverRingScale={dragHoverRingScale}
         coordinateScale={coordinateScale}
         dotScale={dotScale}
